@@ -13,6 +13,9 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::view('/dashboard', 'app')->name('dashboard');
+    Route::view('/sermons', 'app')->name('sermons.index');
+    Route::view('/sermons/new', 'app')->name('sermons.create');
+    Route::view('/sermons/{sermon}', 'app')->whereNumber('sermon')->name('sermons.show');
     Route::view('/settings', 'app')->name('settings');
 });
 

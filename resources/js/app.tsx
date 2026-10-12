@@ -10,6 +10,9 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { NewSermonPage } from './pages/NewSermonPage';
+import { SermonDetailPage } from './pages/SermonDetailPage';
+import { SermonLibraryPage } from './pages/SermonLibraryPage';
 
 function LoadingScreen() {
     return <div className="grid min-h-screen place-items-center bg-paper text-sm font-medium text-stone-500">Loading LumaWord…</div>;
@@ -40,6 +43,9 @@ function App() {
             <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
             <Route path="/reset-password/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/sermons/new" element={<ProtectedRoute><NewSermonPage /></ProtectedRoute>} />
+            <Route path="/sermons/:sermonId" element={<ProtectedRoute><SermonDetailPage /></ProtectedRoute>} />
+            <Route path="/sermons" element={<ProtectedRoute><SermonLibraryPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
