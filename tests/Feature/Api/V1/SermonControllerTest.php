@@ -69,6 +69,54 @@ class SermonControllerTest extends TestCase
         $this->assertDatabaseCount('sermons', 0);
     }
 
+    public function test_authorized_media_upload_is_stored_privately_and_queued(): void
+    {
+        Queue::fake([ProcessSermon::class]);
+        Storage::fake('local');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/api/v1/sermons', [
+            'source_type' => 'upload',
+            'title' => 'Uploaded sermon',
+            'media' => UploadedFile::fake()->create('sermon.mp3', 512, 'audio/mpeg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertCreated()->assertJsonPath('data.processing_status', 'queued');
+        $sermon = Sermon::query()->sole();
+        $this->assertNotNull($sermon->media_path);
+        Storage::disk('local')->assertExists($sermon->media_path);
+        Queue::assertPushed(ProcessSermon::class, fn (ProcessSermon $job): bool => $job->sermonId === $sermon->id);
+    }
+
+    public function test_oversized_media_upload_returns_422_and_stores_nothing(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $maximumKilobytes = (int) config('sermons.limits.maximum_upload_kilobytes');
+
+        $response = $this->actingAs($user)->post('/api/v1/sermons', [
+            'source_type' => 'upload',
+            'media' => UploadedFile::fake()->create('sermon.mp3', $maximumKilobytes + 1, 'audio/mpeg'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors('media');
+        $this->assertDatabaseCount('sermons', 0);
+    }
+
+    public function test_oversized_transcript_returns_422_and_creates_nothing(): void
+    {
+        $user = User::factory()->create();
+        $maximumCharacters = (int) config('sermons.limits.maximum_transcript_characters');
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sermons', [
+            'source_type' => 'transcript',
+            'transcript' => str_repeat('x', $maximumCharacters + 1),
+        ]);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors('transcript');
+        $this->assertDatabaseCount('sermons', 0);
+    }
+
     public function test_user_cannot_view_another_users_sermon(): void
     {
         $owner = User::factory()->create();

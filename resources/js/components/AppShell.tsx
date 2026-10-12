@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Brand } from './Brand';
 
@@ -13,11 +13,10 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
 
     const handleLogout = async () => {
         await logout();
-        navigate('/');
+        window.location.replace('/');
     };
 
     return (
