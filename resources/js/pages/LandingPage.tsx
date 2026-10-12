@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Brand } from '../components/Brand';
+import { useAuth } from '../context/AuthContext';
 
 const steps = [
     { number: '01', title: 'Capture', copy: 'Bring a sermon link, transcript, or authorized media into one focused study space.', status: 'Available' },
@@ -23,6 +24,8 @@ const faqs = [
 ];
 
 export function LandingPage() {
+    const { user, isLoading } = useAuth();
+
     return (
         <div className="overflow-hidden bg-paper text-ink">
             <header className="sticky top-0 z-40 border-b border-black/10 bg-paper/90 backdrop-blur-xl">
@@ -34,9 +37,20 @@ export function LandingPage() {
                         <a href="#plans" className="hover:text-ink">Plans</a>
                         <a href="#faq" className="hover:text-ink">FAQ</a>
                     </nav>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                        <Link to="/login" className="rounded-full px-4 py-2 text-sm font-semibold hover:bg-stone-200">Log in</Link>
-                        <Link to="/register" className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-moss sm:px-5">Sign up</Link>
+                    <div className="flex min-w-40 items-center justify-end gap-2 sm:gap-3">
+                        {isLoading ? (
+                            <span className="h-10 w-28 animate-pulse rounded-full bg-stone-200" aria-label="Checking account" />
+                        ) : user ? (
+                            <>
+                                <Link to="/settings" className="hidden rounded-full px-4 py-2 text-sm font-semibold hover:bg-stone-200 sm:inline-flex">Account</Link>
+                                <Link to="/dashboard" className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-moss sm:px-5">Dashboard</Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/login" className="rounded-full px-4 py-2 text-sm font-semibold hover:bg-stone-200">Log in</Link>
+                                <Link to="/register" className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-moss sm:px-5">Sign up</Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </header>
