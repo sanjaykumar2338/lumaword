@@ -1,92 +1,112 @@
 # LumaWord
 
-LumaWord is an AI-powered Christian discipleship, sermon study, devotional, and apologetics platform. This repository currently contains the Phase 1 web foundation: the public landing experience, authentication, a protected dashboard, account settings, a versioned API, and delivery tooling.
-
-Sermon ingestion and AI processing are intentionally **not active**. The dashboard labels them as Phase 2 functionality.
+LumaWord is an AI-powered Christian discipleship and sermon-study web application. Phase 2 adds authenticated sermon intake, private transcript/media handling, queued transcription and AI analysis, a sermon library, and structured study notes while preserving all Phase 1 functionality.
 
 ## Stack
 
 - Laravel 13 / PHP 8.3+
-- React 19 + TypeScript
-- Tailwind CSS 4 and Vite
-- MySQL for local and production data
-- Laravel Sanctum for first-party SPA authentication and future token-capable API routes
+- React 19, TypeScript, Tailwind CSS 4, and Vite
+- MySQL 8+; Laravel Sanctum; database queues by default
+- OpenAI Responses API and Audio Transcriptions API
 - PHPUnit 12
 
-Redis, OpenAI, Stripe, and Filament are deferred until their roadmap phases require them.
+## Requirements and setup
 
-## Requirements
+Install PHP 8.3–8.5, Composer 2, Node.js 24 LTS, npm, and MySQL 8+ or a compatible MariaDB release.
 
-- PHP 8.3–8.5 with `ctype`, `curl`, `dom`, `fileinfo`, `mbstring`, `openssl`, `pdo_mysql`, `session`, `tokenizer`, `xml`, and `zip`
-- Composer 2
-- Node.js 24 LTS and npm
-- MySQL 8+ or a compatible current MariaDB release
+    git clone https://github.com/sanjaykumar2338/lumaword.git
+    cd lumaword
+    composer install
+    cp .env.example .env
+    php artisan key:generate
+    npm ci
 
-> The PHP 7.4 bundled with older XAMPP releases cannot run Laravel 13. Update XAMPP or point your terminal and web server to PHP 8.3+.
+Create a MySQL database named lumaword, configure DB settings in .env, then run:
 
-## Local setup
+    php artisan migrate
+    composer run dev
 
-```bash
-git clone https://github.com/sanjaykumar2338/lumaword.git
-cd lumaword
-composer install
-cp .env.example .env
-php artisan key:generate
-npm ci
-```
+Open http://localhost:8000. Run the durable queue worker in another terminal:
 
-Create an empty MySQL database named `lumaword`, then adjust these values in `.env` if needed:
+    php artisan queue:work --queue=default --timeout=180 --tries=3
 
-```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=lumaword
-DB_USERNAME=root
-DB_PASSWORD=
-```
+The worker timeout must remain lower than DB_QUEUE_RETRY_AFTER.
 
-Run migrations and start the development processes:
+## OpenAI setup
 
-```bash
-php artisan migrate
-composer run dev
-```
+Keep credentials server-side:
 
-Open `http://localhost:8000`. Laravel serves the React shell while Vite provides frontend assets during development.
+    OPENAI_API_KEY=
+    OPENAI_MODEL=gpt-4o-mini
+    OPENAI_TRANSCRIPTION_MODEL=gpt-4o-mini-transcribe
 
-### Password reset email in local development
+Analysis uses strict JSON-schema structured output and validates the returned structure again before persistence. Model, provider, prompt version, response ID, and usage metadata are retained. No successful AI result is faked when credentials are missing.
 
-The default `MAIL_MAILER=log` setting writes password-reset messages to `storage/logs/laravel.log`. Configure a real mail provider through environment variables before staging or production use.
+## Supported sermon inputs
+
+- Public URL: verified public HTTP/HTTPS targets. Phase 2 does not scrape pages, follow redirects, bypass authentication, download protected media, or claim every YouTube link has a transcript. Add a pasted transcript when an authorized provider transcript is unavailable.
+- Pasted transcript: 200–120,000 characters by default, editable before reprocessing.
+- Authorized upload: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, and webm, up to 25 MB by default. Random filenames are stored on Laravel's private local disk and deleted after successful transcription.
+
+Configurable safeguards:
+
+    SERMON_MIN_TRANSCRIPT_CHARACTERS=200
+    SERMON_MAX_TRANSCRIPT_CHARACTERS=120000
+    SERMON_MAX_UPLOAD_KB=25600
+    SERMON_MAX_DURATION_SECONDS=7200
+    SERMON_DAILY_PROCESSING_LIMIT=10
+    SERMON_JOB_TIMEOUT=180
+    SERMON_PROCESSING_LOCK_SECONDS=240
+    SERMON_MAX_OUTPUT_TOKENS=6000
+
+These are safeguards, not final Free/Premium entitlements. The duration ceiling is enforced when the transcription provider reports duration; file size is always enforced. Production environments requiring mandatory preflight duration inspection still need an approved media-probe strategy.
+
+## Processing lifecycle
+
+    submitted / awaiting transcript
+      -> queued
+      -> transcribing (uploads only)
+      -> transcript ready
+      -> analyzing
+      -> completed
+
+Terminal retry exhaustion moves the sermon to failed. Unique jobs, a cache lock, atomic status changes, stable API idempotency keys, and update-or-create note persistence prevent repeated clicks from creating duplicate application work.
+
+## Protected API
+
+All endpoints use Sanctum and SermonPolicy ownership checks:
+
+    POST   /api/v1/sermons
+    GET    /api/v1/sermons
+    GET    /api/v1/sermons/{sermon}
+    PATCH  /api/v1/sermons/{sermon}
+    DELETE /api/v1/sermons/{sermon}
+    POST   /api/v1/sermons/{sermon}/transcript
+    POST   /api/v1/sermons/{sermon}/process
+    GET    /api/v1/sermons/{sermon}/status
+    GET    /api/v1/sermons/{sermon}/notes
 
 ## Verification
 
-```bash
-php artisan test --compact
-npm run typecheck
-npm run build
-vendor/bin/pint --dirty --format agent
-composer audit
-npm audit
-```
+    php artisan test --compact
+    npm run typecheck
+    npm run build
+    vendor/bin/pint --dirty --format agent
+    composer audit --locked
+    npm audit --audit-level=high
 
-Tests use an in-memory SQLite database so CI does not need a database service. Application runtime defaults to MySQL through `.env.example`.
+Tests use isolated SQLite and fake every external OpenAI call. CI never requires an API key.
 
-## API
+## Security and cost controls
 
-Phase 1 endpoints are versioned under `/api/v1`. Browser authentication uses Sanctum's secure, cookie-based SPA flow. Protected routes also use the `auth:sanctum` guard so later mobile token authentication can share the same user-facing endpoints.
+- Never commit .env, credentials, API keys, user content, vendor, node_modules, or runtime storage.
+- Use HTTPS, secure cookies, a durable queue, and a shared lock-capable cache in production.
+- Media stays outside the public web root; transcripts and notes require owner authorization.
+- URL checks block credentials, unusual ports, unresolved hosts, and private/reserved addresses.
+- Transcript content is explicitly treated as untrusted data in the AI prompt.
+- Configure provider spend limits and monitor actual token/audio usage. Cost depends on selected models and workload; no fixed estimate is invented.
 
-No public token-issuance endpoint exists in Phase 1; the native mobile authentication contract remains an open decision.
-
-See [Architecture](docs/ARCHITECTURE.md), [Phase status](docs/PHASE_STATUS.md), and [Open decisions](docs/OPEN_DECISIONS.md).
-
-## Security
-
-- Never commit `.env` files, credentials, API keys, user content, `vendor`, `node_modules`, or built assets.
-- Keep `APP_DEBUG=false` in production.
-- Use HTTPS and secure cookies in production.
-- Configure the production mail provider and `APP_URL` before password-reset testing.
-- Uploaded/private sermon content is not implemented in Phase 1; future storage must default to private access.
+See docs/ARCHITECTURE.md, docs/PHASE_STATUS.md, and docs/OPEN_DECISIONS.md.
 
 ## License
 

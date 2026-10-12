@@ -4,26 +4,28 @@ Updated: 2026-10-12
 
 ## Phase 1 — Complete
 
-- Laravel 13 application foundation
-- React 19, TypeScript, Tailwind CSS 4, and Vite
-- Responsive public landing page
-- Registration, login, logout, forgot password, and password reset
-- Backend validation and named authentication rate limits
-- Sanctum stateful SPA authentication
-- Server- and client-protected dashboard/settings routes
-- Welcome dashboard with explicit roadmap placeholders
-- Disabled sermon-link input labeled for Phase 2
-- Working profile and password settings
-- Versioned `/api/v1` route structure
-- MySQL runtime configuration and framework foundation migrations
-- PHPUnit feature coverage, frontend type checking, production build, and CI workflow
-- Setup, architecture, status, and decision documentation
+Landing page, React foundation, authentication/password reset, protected dashboard/settings, Sanctum API structure, MySQL-ready migrations, tests, documentation, and CI remain operational.
+
+## Phase 2 — Complete in feature branch
+
+- Supplied LUMA logo integrated; favicon and Apple touch assets generated
+- User-owned sermons and structured notes with factories, indexes, relationships, and policy
+- Safe URL intake with transcript fallback and no restricted scraping
+- Editable transcript and allowlisted private media upload intake
+- Queued transcription and strict-schema OpenAI sermon analysis
+- Status lifecycle, retries, safe failure state, reprocessing, locks, and idempotency
+- Configurable transcript, upload, duration, output, request, and daily safeguards
+- Responsive submission, library, detail, transcript, status, and notes interfaces
+- Protected versioned API with pagination and rate limiting
+- Automated external-service fakes and Phase 1 regression coverage
+- Queue, storage, AI, limits, testing, and cost documentation
+
+A real AI end-to-end run is not verified without a user-supplied OPENAI_API_KEY. No fake success is reported.
 
 ## Later phases — Not started
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 2 | Sermon URL/transcript ingestion and AI sermon notes | Not started |
 | 3 | Sermon-scoped AI questions | Not started |
 | 4 | Devotionals, reading plans, weekly journey | Not started |
 | 5 | Apologetics and theological claim analysis | Not started |
@@ -31,4 +33,4 @@ Updated: 2026-10-12
 | 7 | Admin tools, notifications, monitoring | Not started |
 | 8 | Launch hardening and full release testing | Not started |
 
-No Phase 2 processing, fake AI responses, plan pricing, or payment behavior is present.
+Phase 2 does not include sermon chat, devotional generation, apologetics verdicts, subscriptions, or admin tooling.

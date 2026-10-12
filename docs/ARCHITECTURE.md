@@ -1,71 +1,46 @@
 # LumaWord Architecture
 
-## Phase 1 overview
+## Phase 2 system
 
-LumaWord is a Laravel application that serves a React single-page web interface and a versioned JSON API. The backend remains the system of record so a future native iOS client can reuse authentication, user, and study APIs.
+LumaWord remains a Laravel application serving a React single-page app and a versioned JSON API. Laravel is the system of record for the future native client.
 
-```text
-Browser (React + TypeScript + Tailwind)
-        │ same-origin HTTPS + Sanctum CSRF/session cookies
-        ▼
-Laravel web shell ─────────────── Laravel /api/v1
-        │                               │
-        │                               ├── auth controllers + Form Requests
-        │                               ├── UserResource response contract
-        │                               └── auth:sanctum protected endpoints
-        │
-        └────────────────────────────── MySQL
-                                        ├── users / password reset tokens / sessions
-                                        ├── Sanctum personal access tokens
-                                        ├── cache
-                                        └── jobs / failed jobs / job batches
-```
+    Browser / future native client
+        -> Sanctum-authenticated /api/v1
+        -> Form Requests + SermonPolicy + API Resources
+        -> sermons and sermon_notes in MySQL
+        -> queued ProcessSermon job
+             -> private media transcription boundary
+             -> transcript validation
+             -> OpenAI strict-schema analysis boundary
+             -> atomic notes/status persistence
 
-## Frontend
+## Backend boundaries
 
-- `resources/js/app.tsx` owns client routing.
-- `resources/js/pages` contains route-level screens.
-- `resources/js/components` contains reusable layout and form elements.
-- `resources/js/context/AuthContext.tsx` owns current-user session state.
-- `resources/js/lib/api.ts` centralizes JSON requests and Sanctum CSRF handling.
-- `resources/css/app.css` contains Tailwind 4 theme tokens and minimal base styles.
+- SermonController owns resource listing, creation, reading, renaming, and deletion.
+- Dedicated invokable controllers own transcript replacement, processing requests, status, and notes.
+- SermonPolicy enforces per-user ownership.
+- SermonProcessingDispatcher performs daily-limit checks, row locking, status transitions, and one after-commit dispatch.
+- ProcessSermon is unique per sermon and also uses a cache lock. It is retryable, idempotent at persistence, and stores only safe failure text.
+- SermonAnalyzer and MediaTranscriber contracts isolate external providers. OpenAiSermonService is the current server-side implementation.
+- SermonNotesSchema supplies the strict JSON schema and performs defensive validation before persistence.
+- SermonUrlService normalizes public HTTP/HTTPS URLs and rejects credentials, unusual ports, unresolved DNS, and private/reserved addresses. Phase 2 performs no page scraping or media downloads.
 
-Laravel protects `/dashboard` and `/settings` on the server. React repeats the route guard to handle client-side navigation and expired sessions cleanly.
+## Data and storage
 
-## Backend
+The sermons table owns source metadata, status, private transcript text, media metadata, processing attempts, and timestamps. The sermon_notes table has one row per sermon and stores structured JSON plus provider/model/prompt metadata.
 
-- API routes live in `routes/api.php` under `/api/v1`.
-- Web shell and password-reset link routes live in `routes/web.php`.
-- Controllers are grouped under `App\Http\Controllers\Api\V1`.
-- Form Requests own validation and authorization boundaries.
-- `App\Http\Resources\V1\UserResource` stabilizes user JSON and prevents accidental attribute exposure.
-- Named rate limiters protect registration, login, reset-link, and password-reset endpoints.
+Uploads use the local private disk rooted at storage/app/private. Laravel generates random filenames. The source file is removed after successful transcription; deletion also removes any remaining file. Transcripts and notes are returned only through owner-authorized routes.
 
-Sanctum uses stateful cookie authentication for the first-party web SPA. `auth:sanctum` can also accept personal access tokens, but issuing and rotating native-app tokens is intentionally deferred until the mobile security contract is approved.
+## Processing and frontend
 
-## Data
+URL-only records remain awaiting_transcript until an authorized transcript is supplied. Submitted transcripts/uploads are queued. Uploads move through transcribing; ready transcripts move through analyzing; successful work becomes completed. Final retry exhaustion becomes failed.
 
-Phase 1 persists identity and framework infrastructure only. It does not create sermon, transcript, note, devotional, apologetics, subscription, or upload tables before those domains are defined.
+The browser never waits for transcription or analysis. DashboardPage provides intake and recent status. NewSermonPage provides three intake tabs. SermonLibraryPage adds search/filter/pagination. SermonDetailPage polls active work, edits transcripts, retries failures, and renders structured notes.
 
-MySQL is the runtime database. The test suite uses isolated in-memory SQLite for fast deterministic checks. Database-backed sessions, cache, and queues provide durable defaults; Redis can replace cache/queue drivers when workload and operations justify it.
+Brand uses the supplied LUMA artwork through a transparent derived mark; public/logo.png is preserved.
 
-## Security boundaries
+## Security and cost controls
 
-- Passwords use Laravel's `hashed` model cast.
-- State-changing browser requests use Sanctum CSRF cookies.
-- Authentication responses expose only `UserResource` fields.
-- Forgot-password responses do not reveal whether an email exists.
-- Protected web and API routes enforce authentication independently.
-- Secrets and local data are ignored by Git.
-- Future user sermon content must use private storage and explicit authorization.
+Authentication, policy authorization, CSRF, upload content validation, private storage, SSRF checks, throttles, daily limits, transcript/media limits, HTTP timeouts, unique jobs, locks, prompt-injection instructions, and schema validation form the Phase 2 boundary.
 
-## Future extension points
-
-- Phase 2 adds a user-owned sermon ingestion domain and queued processing.
-- Phase 3 adds sermon-scoped retrieval and question answering.
-- Phase 4 adds devotional and reading-plan models.
-- Phase 5 adds claim-analysis sources and theological review controls.
-- Phase 6 adds Stripe billing and subscription entitlements.
-- Phase 7 adds Filament administration, notifications, and monitoring.
-
-These are boundaries, not implemented features.
+Logs do not include transcript content. Provider credentials remain server-side. Production should use a shared lock-capable cache, durable queue, HTTPS, monitoring, and provider spend limits.
