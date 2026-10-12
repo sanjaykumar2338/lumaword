@@ -3,6 +3,16 @@
 
 # Laravel Boost Guidelines
 
+## Git Workflow
+
+- Work directly on the `main` branch for all LumaWord development.
+- Before starting an assigned task, switch to `main` and pull the latest `origin/main` using a non-rewriting workflow.
+- Do not create feature branches or pull requests.
+- Implement only the assigned phase or task on `main`; do not begin the next phase without explicit user approval.
+- Run the relevant tests and fix failures before committing.
+- Commit completed work with a meaningful message and push it to `origin/main`.
+- Never force-push, rewrite shared history, or overwrite existing work.
+
 ## Foundational Context
 
 This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
