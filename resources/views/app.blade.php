@@ -12,7 +12,7 @@
         <title>{{ config('app.name', 'LumaWord') }}</title>
         @fonts
         @viteReactRefresh
-        @vite(['resources/css/app.css', 'resources/js/app.tsx'])
+        @vite('resources/js/app.tsx')
     </head>
     <body>
         <div id="app"></div>
