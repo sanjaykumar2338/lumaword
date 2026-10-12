@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, "feature/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "feature/phase-1-review"]
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: mbstring, dom, fileinfo, pdo_sqlite
+          extensions: mbstring, dom, fileinfo, pdo_mysql, pdo_sqlite
           coverage: none
 
       - name: Set up Node.js

@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SermonController;
+use App\Http\Controllers\Api\V1\SermonNotesController;
+use App\Http\Controllers\Api\V1\SermonProcessingController;
+use App\Http\Controllers\Api\V1\SermonStatusController;
+use App\Http\Controllers\Api\V1\SermonTranscriptController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -30,5 +35,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
         Route::put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');
         Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy'])->name('auth.logout');
+
+        Route::apiResource('sermons', SermonController::class)
+            ->middlewareFor('store', 'throttle:sermon-submission');
+        Route::post('/sermons/{sermon}/transcript', SermonTranscriptController::class)
+            ->middleware('throttle:sermon-submission')
+            ->name('sermons.transcript.store');
+        Route::post('/sermons/{sermon}/process', SermonProcessingController::class)
+            ->middleware('throttle:sermon-processing')
+            ->name('sermons.process');
+        Route::get('/sermons/{sermon}/status', SermonStatusController::class)->name('sermons.status');
+        Route::get('/sermons/{sermon}/notes', SermonNotesController::class)->name('sermons.notes');
     });
 });

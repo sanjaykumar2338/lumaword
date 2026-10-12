@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\MediaTranscriber;
+use App\Contracts\SermonAnalyzer;
+use App\Services\OpenAiSermonService;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(OpenAiSermonService::class);
+        $this->app->bind(SermonAnalyzer::class, OpenAiSermonService::class);
+        $this->app->bind(MediaTranscriber::class, OpenAiSermonService::class);
     }
 
     /**
@@ -23,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Model::preventLazyLoading(! $this->app->isProduction());
+
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)
             ->by($this->authenticationKey($request)));
 
@@ -34,6 +42,12 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(5)
             ->by($this->authenticationKey($request)));
+
+        RateLimiter::for('sermon-submission', fn (Request $request): Limit => Limit::perMinute(10)
+            ->by(($request->user()?->id ?? 'guest').'|'.$request->ip()));
+
+        RateLimiter::for('sermon-processing', fn (Request $request): Limit => Limit::perMinute(5)
+            ->by(($request->user()?->id ?? 'guest').'|'.$request->ip()));
     }
 
     private function authenticationKey(Request $request): string

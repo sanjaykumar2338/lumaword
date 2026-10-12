@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Brand } from '../components/Brand';
 
 const steps = [
-    { number: '01', title: 'Capture', copy: 'Bring a sermon link or transcript into one focused study space.', status: 'Phase 2' },
+    { number: '01', title: 'Capture', copy: 'Bring a sermon link, transcript, or authorized media into one focused study space.', status: 'Available' },
     { number: '02', title: 'Understand', copy: 'Surface structure, key ideas, Scripture references, and meaningful questions.', status: 'Planned' },
     { number: '03', title: 'Apply', copy: 'Turn listening into prayerful next steps you can revisit throughout the week.', status: 'Planned' },
     { number: '04', title: 'Equip', copy: 'Grow in biblical literacy and respond to difficult questions with clarity and grace.', status: 'Planned' },
@@ -15,9 +15,9 @@ const features = [
 ];
 
 const faqs = [
-    ['Is LumaWord available now?', 'Account creation and the personal dashboard are available in this foundation release. Sermon processing begins in Phase 2.'],
+    ['Is LumaWord available now?', 'Yes. Create an account to submit sermons, track background processing, and review structured sermon notes.'],
     ['Will LumaWord replace my Bible or church community?', 'No. LumaWord is being designed as a study companion that supports Scripture reading, prayer, and participation in a local church—not as a substitute for them.'],
-    ['What sermon links are supported?', 'Supported sources will be confirmed during Phase 2. The current dashboard clearly marks sermon capture as unavailable until ingestion is implemented and tested.'],
+    ['What sermon links are supported?', 'LumaWord safely saves public HTTP and HTTPS sermon links. Transcript access depends on the provider and authorization; when it is unavailable, paste a transcript or upload media you are authorized to process.'],
     ['How much will Premium cost?', 'Pricing has not been set. LumaWord will not publish a price or promise plan-specific limits until those decisions are approved.'],
     ['Will there be a mobile app?', 'A native iOS experience is planned for a later phase. The web application uses a versioned Laravel API so the future app can share the same backend.'],
 ];
@@ -47,7 +47,7 @@ export function LandingPage() {
                     <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[1.05fr_0.95fr] lg:px-10 lg:py-32">
                         <div>
                             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-stone-600">
-                                <span className="size-2 rounded-full bg-lime-500" /> Phase 1 foundation is live
+                                <span className="size-2 rounded-full bg-lime-500" /> Sermon study is live
                             </div>
                             <h1 className="text-balance max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.065em] sm:text-6xl lg:text-7xl">
                                 Don’t just hear the Word. <span className="relative whitespace-nowrap"><span className="relative z-10">Live it.</span><span className="absolute inset-x-0 bottom-1.5 -z-0 h-3 bg-acid sm:h-4" /></span>
@@ -67,7 +67,7 @@ export function LandingPage() {
                             <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-ink p-3 shadow-2xl shadow-black/20">
                                 <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs text-stone-400">
                                     <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-acid" /> Sermon workspace preview</span>
-                                    <span>Phase 2</span>
+                                    <span>Now available</span>
                                 </div>
                                 <div className="grid gap-3 p-3 sm:grid-cols-[0.9fr_1.1fr]">
                                     <div className="rounded-2xl bg-[#1b1e18] p-5">

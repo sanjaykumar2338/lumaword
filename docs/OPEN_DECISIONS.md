@@ -1,39 +1,39 @@
 # Open Decisions
 
-The following choices are intentionally unresolved. They must be approved before the associated phase is implemented.
+Phase 2 uses conservative configurable defaults. They are not final plan entitlements or client policy.
 
 ## Product and theology
 
-- Supported sermon sources and transcript fallback behavior
-- The theological tradition or statement of faith that should guide generated explanations
-- Citation requirements, source ranking, pastoral disclaimers, and human-review policy
-- How church leaders, individual learners, and possible shared libraries differ
-- Final terminology for LUMA versus LumaWord in product copy
+- Approved theological tradition or statement of faith
+- Human-review, pastoral disclaimer, and escalation policy
+- Final terminology for LUMA versus LumaWord
+- Whether AI title suggestions may replace user-entered titles
 
-## Privacy and content
+## Sources, copyright, and privacy
 
-- Sermon/transcript retention periods and user deletion/export behavior
-- Whether source media is downloaded, streamed, or transcript-only
-- Private-storage provider, encryption expectations, and geographic data requirements
-- Copyright/takedown handling for third-party sermon content
+- Provider-authorized transcript APIs beyond paste/upload fallback
+- Copyright, takedown, and proof-of-authorization process
+- Transcript, notes, and media retention/export schedule
+- Production private-storage provider, encryption, and geography
+- Mandatory production duration probe when a provider omits duration
+- Whether users may download transcript and notes
 
-## Accounts and mobile
+## AI and operations
 
-- Whether email verification is required before study features are used
-- Whether two-factor authentication is required or optional
-- Native iOS token issuance, expiration, refresh, revocation, and device management
-- Social sign-in providers, if any
+- Final analysis/transcription models after quality and cost evaluation
+- Approved prompt/evaluation dataset and theological review process
+- Production per-user limits, global spend ceiling, queue concurrency, retries, and alerts
+- Redis/cache/queue topology and monitoring
+- Data residency and provider retention requirements
 
-## Plans and billing
+## Accounts, mobile, and billing
 
-- Free and Premium prices
-- Usage limits and exact feature entitlements for each plan
-- Trial, refund, cancellation, tax, and regional availability policies
-- Stripe customer portal and webhook operating model
+- Email verification and two-factor requirements
+- Native token issuance, refresh, revocation, and device management
+- Social sign-in providers
+- Free/Premium prices and exact entitlements
+- Trial, refund, cancellation, tax, and regional policies
 
-## Operations
+## Branding asset
 
-- Production hosting, managed MySQL, Redis, object storage, mail, and DNS providers
-- Queue concurrency and retry policy once AI workloads exist
-- Monitoring, analytics, consent, support, and incident-response tools
-- Admin roles and audit-log retention
+The supplied public/logo.png contains multiple lockups in one raster image. Phase 2 preserves it and derives a transparent mark for UI/favicon use. A future designer may provide separate vector/transparent lockups without changing the design.
