@@ -22,7 +22,7 @@ declare global {
 }
 
 function LoadingScreen() {
-    return <div className="grid min-h-screen place-items-center bg-paper text-sm font-medium text-stone-500">Loading LumaWord…</div>;
+    return <div className="grid min-h-screen place-items-center bg-paper text-sm font-medium text-stone-500">Loading Luma…</div>;
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

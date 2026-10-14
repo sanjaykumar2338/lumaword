@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Api\V1\Auth\AuthenticationStatusController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
@@ -15,6 +16,8 @@ use App\Http\Controllers\Api\V1\SermonTranscriptController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
+    Route::get('/auth/status', AuthenticationStatusController::class)->name('auth.status');
+
     Route::middleware('guest:web')->group(function (): void {
         Route::post('/auth/register', RegisteredUserController::class)
             ->middleware('throttle:registration')

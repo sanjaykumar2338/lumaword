@@ -80,7 +80,7 @@ export function SermonDetailPage() {
             {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
             {sermon.processing_error && <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">{sermon.processing_error}</p><button type="button" disabled={working} onClick={process} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Retry processing</button></div>}
 
-            {activeStatuses.includes(sermon.processing_status) && <section className="mt-6 rounded-2xl bg-ink p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">Working in the background</p><h2 className="mt-2 text-xl font-semibold">You can safely leave this page.</h2><p className="mt-2 text-sm leading-6 text-stone-400">LumaWord will keep processing and this page checks for updates automatically.</p></section>}
+            {activeStatuses.includes(sermon.processing_status) && <section className="mt-6 rounded-2xl bg-ink p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">Working in the background</p><h2 className="mt-2 text-xl font-semibold">You can safely leave this page.</h2><p className="mt-2 text-sm leading-6 text-stone-400">Luma will keep processing and this page checks for updates automatically.</p></section>}
 
             <div className="mt-8 grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
                 <section className="rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8">

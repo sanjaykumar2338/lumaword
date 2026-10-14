@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        apiRequest<ResourceResponse<User>>('/api/v1/user')
+        apiRequest<ResourceResponse<User | null>>('/api/v1/auth/status')
             .then((response) => setUser(response.data))
             .catch(() => setUser(null))
             .finally(() => setIsLoading(false));

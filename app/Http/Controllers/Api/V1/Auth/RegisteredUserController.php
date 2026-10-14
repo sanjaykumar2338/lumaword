@@ -27,7 +27,7 @@ class RegisteredUserController extends Controller
         $request->session()->regenerate();
 
         return (new UserResource($user))
-            ->additional(['message' => 'Welcome to LumaWord.'])
+            ->additional(['message' => 'Welcome to Luma.'])
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
     }

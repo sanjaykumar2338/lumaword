@@ -20,7 +20,7 @@ export function DashboardPage() {
     return (
         <AppShell>
             <header className="flex flex-col gap-4 border-b border-black/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
-                <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Your LumaWord</p><h1 className="mt-2 text-4xl font-semibold tracking-[-0.055em] sm:text-5xl">Welcome, {user?.name.split(' ')[0] ?? 'friend'}.</h1></div>
+                <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Luma</p><h1 className="mt-2 text-4xl font-semibold tracking-[-0.055em] sm:text-5xl">Welcome, {user?.name.split(' ')[0] ?? 'friend'}.</h1></div>
                 <Link to="/sermons" className="text-sm font-semibold text-moss hover:underline">Open sermon library</Link>
             </header>
 

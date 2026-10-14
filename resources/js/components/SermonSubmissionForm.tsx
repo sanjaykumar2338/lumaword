@@ -7,7 +7,7 @@ type SourceType = 'url' | 'transcript' | 'upload';
 
 const methods: Array<{ id: SourceType; label: string; hint: string }> = [
     { id: 'url', label: 'Sermon link', hint: 'Save a public sermon link, then add an authorized transcript if the provider cannot supply one.' },
-    { id: 'transcript', label: 'Paste transcript', hint: 'The fastest path: paste the sermon text and LumaWord will queue the notes.' },
+    { id: 'transcript', label: 'Paste transcript', hint: 'The fastest path: paste the sermon text and Luma will queue the notes.' },
     { id: 'upload', label: 'Upload media', hint: 'Upload an authorized audio or video file for private transcription.' },
 ];
 
