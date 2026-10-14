@@ -11,6 +11,7 @@ use App\Models\Sermon;
 use App\SermonProcessingStatus;
 use App\SermonSourceType;
 use App\Services\SermonProcessingDispatcher;
+use App\Services\SermonProcessingMonitor;
 use App\Services\SermonUrlService;
 use App\TranscriptSource;
 use Illuminate\Http\JsonResponse;
@@ -103,9 +104,10 @@ class SermonController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(Sermon $sermon): SermonResource
+    public function show(Sermon $sermon, SermonProcessingMonitor $monitor): SermonResource
     {
         Gate::authorize('view', $sermon);
+        $monitor->failIfStale($sermon);
 
         return new SermonResource($sermon->load('notes'));
     }

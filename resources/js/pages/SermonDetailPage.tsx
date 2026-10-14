@@ -78,6 +78,17 @@ export function SermonDetailPage() {
 
             {message && <p className="mt-5 rounded-xl bg-lime-100 px-4 py-3 text-sm text-moss">{message}</p>}
             {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+            {sermon.processing_status === 'awaiting_transcript' && (
+                <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-labelledby="transcript-needed-title">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-900">Transcript needed</p>
+                    <h2 id="transcript-needed-title" className="mt-2 text-xl font-semibold">This link was saved, but no transcript was retrieved.</h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-950">Paste a transcript below to create notes, or start a new sermon and upload audio or video that you own or have permission to use.</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                        <button type="button" onClick={() => document.querySelector<HTMLTextAreaElement>('textarea')?.focus()} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Paste transcript below</button>
+                        <Link to="/sermons/new" className="rounded-full border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-950">Upload authorized media</Link>
+                    </div>
+                </section>
+            )}
             {sermon.processing_error && <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">{sermon.processing_error}</p><button type="button" disabled={working} onClick={process} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Retry processing</button></div>}
 
             {activeStatuses.includes(sermon.processing_status) && <section className="mt-6 rounded-2xl bg-ink p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">Working in the background</p><h2 className="mt-2 text-xl font-semibold">You can safely leave this page.</h2><p className="mt-2 text-sm leading-6 text-stone-400">Luma will keep processing and this page checks for updates automatically.</p></section>}

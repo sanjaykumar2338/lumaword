@@ -23,13 +23,22 @@
 
     button,
     a,
-    input {
+    input,
+    select,
+    textarea,
+    summary {
         @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid;
     }
 
     ::selection {
         background: #c8ff3d;
         color: #11130f;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
     }
 }
 

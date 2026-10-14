@@ -11,6 +11,7 @@ return [
     'processing' => [
         'timeout_seconds' => (int) env('SERMON_JOB_TIMEOUT', 180),
         'lock_seconds' => (int) env('SERMON_PROCESSING_LOCK_SECONDS', 240),
+        'stale_after_seconds' => (int) env('SERMON_PROCESSING_STALE_AFTER_SECONDS', 1800),
         'prompt_version' => env('SERMON_PROMPT_VERSION', 'sermon-notes-v1'),
         'max_output_tokens' => (int) env('SERMON_MAX_OUTPUT_TOKENS', 6000),
     ],

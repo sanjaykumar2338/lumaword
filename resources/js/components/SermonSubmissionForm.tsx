@@ -6,7 +6,7 @@ import type { ResourceResponse, Sermon } from '../types';
 type SourceType = 'url' | 'transcript' | 'upload';
 
 const methods: Array<{ id: SourceType; label: string; hint: string }> = [
-    { id: 'url', label: 'Sermon link', hint: 'Save a public sermon link, then add an authorized transcript if the provider cannot supply one.' },
+    { id: 'url', label: 'Sermon link', hint: 'Save a public sermon link for reference. Luma does not automatically retrieve its transcript; paste one next or upload authorized media.' },
     { id: 'transcript', label: 'Paste transcript', hint: 'The fastest path: paste the sermon text and Luma will queue the notes.' },
     { id: 'upload', label: 'Upload media', hint: 'Upload an authorized audio or video file for private transcription.' },
 ];
@@ -85,10 +85,13 @@ export function SermonSubmissionForm({ compact = false }: { compact?: boolean })
                 </label>
 
                 {sourceType === 'url' && (
-                    <label className="grid gap-2 text-sm font-semibold">
-                        Public sermon URL
-                        <input type="url" required value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." className="h-12 rounded-xl border border-stone-300 bg-white px-4 font-normal outline-none transition focus:border-moss focus:ring-2 focus:ring-acid/50" />
-                    </label>
+                    <>
+                        <label className="grid gap-2 text-sm font-semibold">
+                            Public sermon URL
+                            <input type="url" required value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." className="h-12 rounded-xl border border-stone-300 bg-white px-4 font-normal outline-none transition focus:border-moss focus:ring-2 focus:ring-acid/50" />
+                        </label>
+                        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950">Saving a link does not download the sermon or its captions. After saving, Luma will ask you for a transcript before creating notes.</p>
+                    </>
                 )}
 
                 {sourceType === 'transcript' && (

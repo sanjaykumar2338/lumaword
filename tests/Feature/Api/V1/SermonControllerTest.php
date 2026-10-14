@@ -55,6 +55,24 @@ class SermonControllerTest extends TestCase
         $this->assertDatabaseCount('sermons', 0);
     }
 
+    public function test_public_url_is_saved_as_awaiting_transcript_without_queueing_processing(): void
+    {
+        Queue::fake([ProcessSermon::class]);
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sermons', [
+            'source_type' => 'url',
+            'source_url' => 'https://8.8.8.8/sermons/sunday-message',
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.processing_status', 'awaiting_transcript')
+            ->assertJsonPath('data.has_transcript', false)
+            ->assertJsonPath('message', 'Sermon link saved. Add an authorized transcript to continue.');
+        Queue::assertNothingPushed();
+    }
+
     public function test_unsupported_upload_type_returns_422_and_stores_nothing(): void
     {
         Storage::fake('local');
@@ -168,6 +186,38 @@ class SermonControllerTest extends TestCase
             ->getJson("/api/v1/sermons/{$sermon->id}/notes")
             ->assertOk()
             ->assertJsonPath('data.id', $notes->id);
+    }
+
+    public function test_stale_processing_is_marked_failed_with_a_safe_retry_message(): void
+    {
+        $user = User::factory()->create();
+        $sermon = Sermon::factory()->for($user)->create([
+            'processing_status' => SermonProcessingStatus::Analyzing,
+            'processing_started_at' => now()->subSeconds((int) config('sermons.processing.stale_after_seconds') + 1),
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/api/v1/sermons/{$sermon->id}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.processing_status', 'failed')
+            ->assertJsonPath('data.processing_error', 'Processing took longer than expected. Please retry. If it continues, contact support.');
+        $this->assertSame(SermonProcessingStatus::Failed, $sermon->refresh()->processing_status);
+    }
+
+    public function test_failed_sermon_can_be_retried_and_clears_the_previous_error(): void
+    {
+        Queue::fake([ProcessSermon::class]);
+        $user = User::factory()->create();
+        $sermon = Sermon::factory()->for($user)->failed()->create();
+
+        $response = $this->actingAs($user)->postJson("/api/v1/sermons/{$sermon->id}/process");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.processing_status', 'queued')
+            ->assertJsonPath('data.processing_error', null);
+        Queue::assertPushed(ProcessSermon::class, fn (ProcessSermon $job): bool => $job->sermonId === $sermon->id);
     }
 
     public function test_transcript_submission_replaces_notes_and_queues_processing(): void
