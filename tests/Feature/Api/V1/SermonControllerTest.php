@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\V1;
 
 use App\Jobs\ProcessSermon;
 use App\Models\Sermon;
+use App\Models\SermonConversation;
 use App\Models\SermonNote;
 use App\Models\User;
 use App\SermonProcessingStatus;
@@ -226,6 +227,7 @@ class SermonControllerTest extends TestCase
         $user = User::factory()->create();
         $sermon = Sermon::factory()->for($user)->completed()->create();
         SermonNote::factory()->for($sermon)->create();
+        SermonConversation::factory()->for($user)->for($sermon)->create();
         $replacement = str_repeat('A replacement transcript grounded in the actual sermon. ', 8);
 
         $response = $this->actingAs($user)->postJson("/api/v1/sermons/{$sermon->id}/transcript", [
@@ -236,6 +238,7 @@ class SermonControllerTest extends TestCase
         $response->assertOk()->assertJsonPath('data.processing_status', 'queued');
         $this->assertSame(trim($replacement), $sermon->refresh()->transcript);
         $this->assertDatabaseCount('sermon_notes', 0);
+        $this->assertDatabaseCount('sermon_conversations', 0);
         Queue::assertPushed(ProcessSermon::class);
     }
 

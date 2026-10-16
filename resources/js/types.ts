@@ -54,3 +54,22 @@ export type PaginatedResponse<T> = {
     links: { first: string | null; last: string | null; prev: string | null; next: string | null };
     meta: { current_page: number; last_page: number; per_page: number; total: number };
 };
+
+export type SermonConversation = {
+    id: number;
+    sermon_id: number;
+    title: string | null;
+    message_count?: number;
+    created_at: string;
+    updated_at: string;
+};
+
+export type SermonMessage = {
+    id: number;
+    role: 'user' | 'assistant';
+    content: string;
+    sources: Array<{ section: string; excerpt: string }>;
+    status: 'pending' | 'completed' | 'failed';
+    client_request_id: string | null;
+    created_at: string;
+};

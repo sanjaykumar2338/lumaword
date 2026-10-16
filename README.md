@@ -1,6 +1,6 @@
 # LumaWord
 
-LumaWord is an AI-powered Christian discipleship and sermon-study web application. Phase 2 adds authenticated sermon intake, private transcript/media handling, queued transcription and AI analysis, a sermon library, and structured study notes while preserving all Phase 1 functionality.
+LumaWord is an AI-powered Christian discipleship and sermon-study web application. Phase 3 adds persistent, transcript-grounded Ask Luma conversations to authenticated sermon intake, queued processing, the sermon library, and structured study notes.
 
 ## Stack
 
@@ -58,6 +58,11 @@ Configurable safeguards:
     SERMON_JOB_TIMEOUT=180
     SERMON_PROCESSING_LOCK_SECONDS=240
     SERMON_MAX_OUTPUT_TOKENS=6000
+    SERMON_QA_MAX_QUESTION_CHARACTERS=2000
+    SERMON_QA_DAILY_QUESTIONS=20
+    SERMON_QA_RECENT_MESSAGES=8
+    SERMON_QA_MAX_OUTPUT_TOKENS=1200
+    SERMON_QA_MAX_CONTEXT_CHARACTERS=12000
 
 These are safeguards, not final Free/Premium entitlements. The duration ceiling is enforced when the transcription provider reports duration; file size is always enforced. Production environments requiring mandatory preflight duration inspection still need an approved media-probe strategy.
 
@@ -85,6 +90,9 @@ All endpoints use Sanctum and SermonPolicy ownership checks:
     POST   /api/v1/sermons/{sermon}/process
     GET    /api/v1/sermons/{sermon}/status
     GET    /api/v1/sermons/{sermon}/notes
+    GET    /api/v1/sermons/{sermon}/conversation
+    GET    /api/v1/sermons/{sermon}/conversation/messages
+    POST   /api/v1/sermons/{sermon}/conversation/messages
 
 ## Verification
 
@@ -106,7 +114,7 @@ Tests use isolated SQLite and fake every external OpenAI call. CI never requires
 - Transcript content is explicitly treated as untrusted data in the AI prompt.
 - Configure provider spend limits and monitor actual token/audio usage. Cost depends on selected models and workload; no fixed estimate is invented.
 
-See docs/ARCHITECTURE.md, docs/PHASE_STATUS.md, and docs/OPEN_DECISIONS.md.
+See docs/ARCHITECTURE.md, docs/PHASE_3_SERMON_QA.md, docs/PHASE_STATUS.md, and docs/OPEN_DECISIONS.md.
 
 ## License
 

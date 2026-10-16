@@ -18,6 +18,7 @@ class SermonTranscriptController extends Controller
         SermonProcessingDispatcher $dispatcher,
     ): SermonResource {
         $sermon->notes()->delete();
+        $sermon->conversations()->delete();
         $sermon->update([
             'transcript' => $request->validated('transcript'),
             'transcript_source' => TranscriptSource::Pasted,

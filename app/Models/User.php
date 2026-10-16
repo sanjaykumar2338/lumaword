@@ -36,4 +36,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Sermon::class);
     }
+
+    public function sermonConversations(): HasMany
+    {
+        return $this->hasMany(SermonConversation::class);
+    }
 }

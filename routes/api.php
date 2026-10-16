@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\V1\AuthenticatedUserController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SermonController;
+use App\Http\Controllers\Api\V1\SermonConversationController;
+use App\Http\Controllers\Api\V1\SermonMessageController;
 use App\Http\Controllers\Api\V1\SermonNotesController;
 use App\Http\Controllers\Api\V1\SermonProcessingController;
 use App\Http\Controllers\Api\V1\SermonStatusController;
@@ -49,5 +51,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('sermons.process');
         Route::get('/sermons/{sermon}/status', SermonStatusController::class)->name('sermons.status');
         Route::get('/sermons/{sermon}/notes', SermonNotesController::class)->name('sermons.notes');
+        Route::get('/sermons/{sermon}/conversation', [SermonConversationController::class, 'show'])
+            ->name('sermons.conversation.show');
+        Route::get('/sermons/{sermon}/conversation/messages', [SermonMessageController::class, 'index'])
+            ->name('sermons.conversation.messages.index');
+        Route::post('/sermons/{sermon}/conversation/messages', [SermonMessageController::class, 'store'])
+            ->middleware('throttle:sermon-questions')
+            ->name('sermons.conversation.messages.store');
     });
 });

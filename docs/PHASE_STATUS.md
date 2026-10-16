@@ -1,12 +1,12 @@
 # Phase Status
 
-Updated: 2026-10-12
+Updated: 2026-10-16
 
 ## Phase 1 — Complete
 
 Landing page, React foundation, authentication/password reset, protected dashboard/settings, Sanctum API structure, MySQL-ready migrations, tests, documentation, and CI remain operational.
 
-## Phase 2 — Complete in feature branch
+## Phase 2 — Complete
 
 - Supplied LUMA logo integrated; favicon and Apple touch assets generated
 - User-owned sermons and structured notes with factories, indexes, relationships, and policy
@@ -22,15 +22,26 @@ Landing page, React foundation, authentication/password reset, protected dashboa
 
 A real AI end-to-end run is not verified without a user-supplied OPENAI_API_KEY. No fake success is reported.
 
+## Phase 3 — Complete
+
+- Persistent, sermon-owned conversations and paginated messages
+- Transcript-first answers with structured notes and bounded recent history
+- Lexical long-transcript context selection without external retrieval infrastructure
+- Server-verified transcript excerpts and no invented timestamps
+- Prompt-injection boundaries, safe provider failures, idempotent retries, locking, and daily limits
+- Responsive Ask Luma interface with working suggestions, unavailable states, sources, and retries
+- Automated authorization, persistence, grounding, failure, retry, validation, context, and rate-limit coverage
+
+A real OpenAI end-to-end run is not verified without a user-supplied `OPENAI_API_KEY`. No fake success is reported.
+
 ## Later phases — Not started
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 3 | Sermon-scoped AI questions | Not started |
 | 4 | Devotionals, reading plans, weekly journey | Not started |
 | 5 | Apologetics and theological claim analysis | Not started |
 | 6 | Free/paid subscriptions and Stripe | Not started |
 | 7 | Admin tools, notifications, monitoring | Not started |
 | 8 | Launch hardening and full release testing | Not started |
 
-Phase 2 does not include sermon chat, devotional generation, apologetics verdicts, subscriptions, or admin tooling.
+Phase 3 does not include devotionals, apologetics verdicts, subscriptions, or admin tooling.
