@@ -14,7 +14,13 @@ export type MessageResponse = {
     message: string;
 };
 
-export type SermonProcessingStatus = 'submitted' | 'awaiting_transcript' | 'transcribing' | 'transcript_ready' | 'queued' | 'analyzing' | 'completed' | 'failed';
+export type SermonProcessingStatus = 'submitted' | 'awaiting_transcript' | 'retrieving_transcript' | 'transcribing' | 'transcript_ready' | 'queued' | 'analyzing' | 'completed' | 'failed';
+
+export type YoutubeConnectionStatus = {
+    configured: boolean;
+    connected: boolean;
+    channel: { id: string; title: string } | null;
+};
 
 export type SermonNote = {
     id: number;
@@ -35,6 +41,7 @@ export type Sermon = {
     source_type: 'url' | 'transcript' | 'upload';
     source_url: string | null;
     source_provider: string | null;
+    provider_video_id: string | null;
     processing_status: SermonProcessingStatus;
     processing_error: string | null;
     transcript?: string | null;

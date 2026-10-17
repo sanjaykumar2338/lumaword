@@ -20,6 +20,7 @@ class SermonResource extends JsonResource
             'source_type' => $this->source_type->value,
             'source_url' => $this->source_url,
             'source_provider' => $this->source_provider,
+            'provider_video_id' => $this->provider_video_id,
             'processing_status' => $this->processing_status->value,
             'processing_error' => $this->processing_error,
             'transcript' => $this->when($this->resource->hasAttribute('transcript'), $this->transcript),

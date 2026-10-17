@@ -5,10 +5,12 @@ namespace App\Http\Requests\Api\V1;
 use App\Rules\SafeSermonUrl;
 use App\SermonSourceType;
 use App\Services\SermonUrlService;
+use App\Services\YoutubeUrlService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Validator;
 
 class StoreSermonRequest extends FormRequest
 {
@@ -50,6 +52,28 @@ class StoreSermonRequest extends FormRequest
             'transcript_language' => ['nullable', 'string', 'max:12'],
             'auto_process' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /** @return array<int, callable(Validator): void> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->has('source_url') || ! $this->filled('source_url')) {
+                return;
+            }
+
+            $url = $this->string('source_url')->toString();
+
+            if ((new SermonUrlService)->provider($url) !== 'youtube') {
+                return;
+            }
+
+            try {
+                (new YoutubeUrlService)->videoId($url);
+            } catch (\InvalidArgumentException $exception) {
+                $validator->errors()->add('source_url', $exception->getMessage());
+            }
+        }];
     }
 
     protected function prepareForValidation(): void

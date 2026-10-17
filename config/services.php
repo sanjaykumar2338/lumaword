@@ -44,4 +44,12 @@ return [
         'timeout' => (int) env('OPENAI_TIMEOUT', 120),
     ],
 
+    'youtube' => [
+        'client_id' => env('YOUTUBE_CLIENT_ID'),
+        'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+        'redirect_uri' => env('YOUTUBE_REDIRECT_URI'),
+        'connect_timeout' => (int) env('YOUTUBE_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('YOUTUBE_TIMEOUT', 20),
+    ],
+
 ];

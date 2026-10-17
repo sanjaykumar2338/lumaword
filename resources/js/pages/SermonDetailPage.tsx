@@ -4,9 +4,9 @@ import { AppShell } from '../components/AppShell';
 import { AskLumaSection } from '../components/AskLumaSection';
 import { SermonStatusBadge } from '../components/SermonStatusBadge';
 import { ApiError, apiRequest } from '../lib/api';
-import type { ResourceResponse, Sermon } from '../types';
+import type { ResourceResponse, Sermon, YoutubeConnectionStatus } from '../types';
 
-const activeStatuses = ['submitted', 'transcribing', 'queued', 'analyzing'];
+const activeStatuses = ['submitted', 'retrieving_transcript', 'transcribing', 'queued', 'analyzing'];
 
 export function SermonDetailPage() {
     const { sermonId } = useParams();
@@ -17,6 +17,8 @@ export function SermonDetailPage() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [working, setWorking] = useState(false);
+    const [media, setMedia] = useState<File | null>(null);
+    const [youtubeConnection, setYoutubeConnection] = useState<YoutubeConnectionStatus | null>(null);
 
     const load = useCallback(async () => {
         const response = await apiRequest<ResourceResponse<Sermon>>(`/api/v1/sermons/${sermonId}`);
@@ -25,6 +27,12 @@ export function SermonDetailPage() {
     }, [sermonId, editingTranscript]);
 
     useEffect(() => { load().catch(() => setError('This sermon could not be loaded.')); }, [load]);
+
+    useEffect(() => {
+        apiRequest<YoutubeConnectionStatus>('/api/v1/youtube/connection')
+            .then(setYoutubeConnection)
+            .catch(() => setYoutubeConnection(null));
+    }, []);
 
     useEffect(() => {
         if (!sermon || !activeStatuses.includes(sermon.processing_status)) return;
@@ -56,6 +64,23 @@ export function SermonDetailPage() {
         } finally { setWorking(false); }
     };
 
+    const uploadMedia = async (event: FormEvent) => {
+        event.preventDefault();
+
+        if (!media) return;
+
+        setWorking(true); setError(''); setMessage('');
+        const body = new FormData();
+        body.append('media', media);
+
+        try {
+            const response = await apiRequest<ResourceResponse<Sermon>>(`/api/v1/sermons/${sermonId}/media`, { method: 'POST', body });
+            setSermon(response.data); setMedia(null); setMessage(response.message ?? 'Media uploaded and queued.');
+        } catch (caught) {
+            setError(caught instanceof ApiError ? Object.values(caught.errors)[0]?.[0] ?? caught.message : 'The media file could not be uploaded.');
+        } finally { setWorking(false); }
+    };
+
     const remove = async () => {
         if (!window.confirm('Delete this sermon, transcript, and notes? This cannot be undone.')) return;
         await apiRequest<void>(`/api/v1/sermons/${sermonId}`, { method: 'DELETE' });
@@ -65,6 +90,7 @@ export function SermonDetailPage() {
     if (!sermon) return <AppShell><p className="text-sm text-stone-600">{error || 'Loading sermon...'}</p></AppShell>;
 
     const notes = sermon.notes;
+    const needsTranscript = !sermon.has_transcript && ['awaiting_transcript', 'failed'].includes(sermon.processing_status);
 
     return (
         <AppShell>
@@ -79,18 +105,24 @@ export function SermonDetailPage() {
 
             {message && <p className="mt-5 rounded-xl bg-lime-100 px-4 py-3 text-sm text-moss">{message}</p>}
             {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
-            {sermon.processing_status === 'awaiting_transcript' && (
+            {needsTranscript && (
                 <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-labelledby="transcript-needed-title">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-900">Transcript needed</p>
                     <h2 id="transcript-needed-title" className="mt-2 text-xl font-semibold">This link was saved, but no transcript was retrieved.</h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-950">Paste a transcript below to create notes, or start a new sermon and upload audio or video that you own or have permission to use.</p>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-950">{sermon.processing_error ?? 'Automatic transcript retrieval is unavailable for this link. Paste a transcript or upload audio or video that you own or have permission to use.'}</p>
                     <div className="mt-4 flex flex-wrap gap-3">
                         <button type="button" onClick={() => document.querySelector<HTMLTextAreaElement>('textarea')?.focus()} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Paste transcript below</button>
-                        <Link to="/sermons/new" className="rounded-full border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-950">Upload authorized media</Link>
+                        {sermon.source_provider === 'youtube' && youtubeConnection?.connected && <button type="button" disabled={working} onClick={process} className="rounded-full border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-950 disabled:opacity-60">Try connected channel again</button>}
                     </div>
+                    <form onSubmit={uploadMedia} className="mt-5 grid gap-3 border-t border-amber-200 pt-5 sm:grid-cols-[1fr_auto] sm:items-end">
+                        <label className="grid gap-2 text-sm font-semibold text-amber-950">Or upload authorized audio or video
+                            <input required type="file" accept=".flac,.mp3,.mp4,.mpeg,.mpga,.m4a,.ogg,.wav,.webm,audio/*,video/mp4,video/webm" onChange={(event) => setMedia(event.target.files?.[0] ?? null)} className="min-w-0 rounded-xl border border-dashed border-amber-400 bg-white px-3 py-3 text-xs font-normal file:mr-3 file:rounded-full file:border-0 file:bg-ink file:px-3 file:py-2 file:font-semibold file:text-white" />
+                        </label>
+                        <button disabled={working || !media} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white disabled:opacity-60">Upload & process</button>
+                    </form>
                 </section>
             )}
-            {sermon.processing_error && <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">{sermon.processing_error}</p><button type="button" disabled={working} onClick={process} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Retry processing</button></div>}
+            {['failed', 'transcript_ready'].includes(sermon.processing_status) && sermon.processing_error && sermon.has_transcript && <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">{sermon.processing_error}</p><button type="button" disabled={working} onClick={process} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Retry processing</button></div>}
 
             {activeStatuses.includes(sermon.processing_status) && <section className="mt-6 rounded-2xl bg-ink p-6 text-white"><p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">Working in the background</p><h2 className="mt-2 text-xl font-semibold">You can safely leave this page.</h2><p className="mt-2 text-sm leading-6 text-stone-400">Luma will keep processing and this page checks for updates automatically.</p></section>}
 

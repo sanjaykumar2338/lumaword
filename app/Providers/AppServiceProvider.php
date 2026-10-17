@@ -52,6 +52,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('sermon-processing', fn (Request $request): Limit => Limit::perMinute(5)
             ->by(($request->user()?->id ?? 'guest').'|'.$request->ip()));
 
+        RateLimiter::for('youtube-connection', fn (Request $request): Limit => Limit::perMinute(5)
+            ->by(($request->user()?->id ?? 'guest').'|'.$request->ip()));
+
+        RateLimiter::for('youtube-transcripts', fn (): Limit => Limit::perMinute(
+            (int) config('sermons.limits.youtube_requests_per_minute'),
+        )->by('youtube-data-api'));
+
         RateLimiter::for('sermon-questions', fn (Request $request): Limit => Limit::perDay(
             (int) config('sermons.qa.daily_questions_per_user'),
         )->by((string) ($request->user()?->id ?? $request->ip())));

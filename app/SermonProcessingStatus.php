@@ -6,6 +6,7 @@ enum SermonProcessingStatus: string
 {
     case Submitted = 'submitted';
     case AwaitingTranscript = 'awaiting_transcript';
+    case RetrievingTranscript = 'retrieving_transcript';
     case Transcribing = 'transcribing';
     case TranscriptReady = 'transcript_ready';
     case Queued = 'queued';
@@ -15,6 +16,6 @@ enum SermonProcessingStatus: string
 
     public function isActive(): bool
     {
-        return in_array($this, [self::Transcribing, self::Queued, self::Analyzing], true);
+        return in_array($this, [self::RetrievingTranscript, self::Transcribing, self::Queued, self::Analyzing], true);
     }
 }

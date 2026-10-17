@@ -14,6 +14,7 @@ class SermonProcessingDispatcher
     public function dispatch(Sermon $sermon, User $user): bool
     {
         $startedToday = $user->sermons()
+            ->whereKeyNot($sermon->id)
             ->where('processing_started_at', '>=', now()->startOfDay())
             ->count();
 

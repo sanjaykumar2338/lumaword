@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Jobs\FetchYoutubeTranscript;
 use App\Jobs\ProcessSermon;
 use App\Models\Sermon;
 use App\Models\SermonConversation;
 use App\Models\SermonNote;
 use App\Models\User;
+use App\Models\YoutubeConnection;
 use App\SermonProcessingStatus;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -70,8 +72,42 @@ class SermonControllerTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.processing_status', 'awaiting_transcript')
             ->assertJsonPath('data.has_transcript', false)
-            ->assertJsonPath('message', 'Sermon link saved. Add an authorized transcript to continue.');
+            ->assertJsonPath('message', 'Sermon link saved. Add an authorized transcript or media file to continue.');
         Queue::assertNothingPushed();
+    }
+
+    public function test_connected_owner_channel_queues_authorized_youtube_caption_retrieval(): void
+    {
+        Queue::fake([FetchYoutubeTranscript::class]);
+        $user = User::factory()->create();
+        YoutubeConnection::factory()->for($user)->create();
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sermons', [
+            'source_type' => 'url',
+            'source_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.processing_status', 'retrieving_transcript')
+            ->assertJsonPath('data.provider_video_id', 'dQw4w9WgXcQ');
+        $sermon = Sermon::query()->sole();
+        Queue::assertPushed(FetchYoutubeTranscript::class, fn (FetchYoutubeTranscript $job): bool => $job->sermonId === $sermon->id);
+    }
+
+    public function test_youtube_channel_or_playlist_link_returns_422(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/api/v1/sermons', [
+            'source_type' => 'url',
+            'source_url' => 'https://www.youtube.com/playlist?list=PL123',
+        ]);
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('source_url');
+        $this->assertDatabaseCount('sermons', 0);
     }
 
     public function test_unsupported_upload_type_returns_422_and_stores_nothing(): void

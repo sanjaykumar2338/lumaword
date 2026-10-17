@@ -1,12 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, apiRequest } from '../lib/api';
-import type { ResourceResponse, Sermon } from '../types';
+import type { ResourceResponse, Sermon, YoutubeConnectionStatus } from '../types';
 
 type SourceType = 'url' | 'transcript' | 'upload';
 
 const methods: Array<{ id: SourceType; label: string; hint: string }> = [
-    { id: 'url', label: 'Sermon link', hint: 'Save a public sermon link for reference. Luma does not automatically retrieve its transcript; paste one next or upload authorized media.' },
+    { id: 'url', label: 'Sermon link', hint: 'Paste a YouTube video link. Luma can retrieve captions only from a connected channel you own; other links stay saved for the fallback options.' },
     { id: 'transcript', label: 'Paste transcript', hint: 'The fastest path: paste the sermon text and Luma will queue the notes.' },
     { id: 'upload', label: 'Upload media', hint: 'Upload an authorized audio or video file for private transcription.' },
 ];
@@ -19,7 +19,29 @@ export function SermonSubmissionForm({ compact = false }: { compact?: boolean })
     const [media, setMedia] = useState<File | null>(null);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [youtubeConnection, setYoutubeConnection] = useState<YoutubeConnectionStatus | null>(null);
+    const [connectingYoutube, setConnectingYoutube] = useState(false);
     const navigate = useNavigate();
+    const isYoutubeLink = /^(?:https?:\/\/)?(?:www\.|m\.|music\.)?(?:youtube\.com|youtu\.be)\//i.test(sourceUrl);
+
+    useEffect(() => {
+        apiRequest<YoutubeConnectionStatus>('/api/v1/youtube/connection')
+            .then(setYoutubeConnection)
+            .catch(() => setYoutubeConnection(null));
+    }, []);
+
+    const connectYoutube = async () => {
+        setConnectingYoutube(true);
+        setError('');
+
+        try {
+            const response = await apiRequest<{ authorization_url: string }>('/api/v1/youtube/connection', { method: 'POST' });
+            window.location.assign(response.authorization_url);
+        } catch (caught) {
+            setError(caught instanceof ApiError ? caught.message : 'YouTube could not be connected. Please try again.');
+            setConnectingYoutube(false);
+        }
+    };
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
@@ -90,7 +112,18 @@ export function SermonSubmissionForm({ compact = false }: { compact?: boolean })
                             Public sermon URL
                             <input type="url" required value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." className="h-12 rounded-xl border border-stone-300 bg-white px-4 font-normal outline-none transition focus:border-moss focus:ring-2 focus:ring-acid/50" />
                         </label>
-                        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950">Saving a link does not download the sermon or its captions. After saving, Luma will ask you for a transcript before creating notes.</p>
+                        {isYoutubeLink && youtubeConnection?.connected ? (
+                            <div className="rounded-xl border border-lime-300 bg-lime-50 px-4 py-3 text-xs leading-5 text-moss">
+                                <strong>{youtubeConnection.channel?.title}</strong> is connected. If this channel owns the video and YouTube provides a downloadable caption, Luma will retrieve it and create notes automatically.
+                            </div>
+                        ) : isYoutubeLink && youtubeConnection?.configured ? (
+                            <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+                                <span>Automatic captions require the YouTube channel that owns this video.</span>
+                                <button type="button" onClick={connectYoutube} disabled={connectingYoutube} className="shrink-0 rounded-full bg-ink px-4 py-2 font-semibold text-white disabled:opacity-60">{connectingYoutube ? 'Connecting...' : 'Connect your channel'}</button>
+                            </div>
+                        ) : (
+                            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950">The link will stay attached to the sermon. If an authorized caption cannot be retrieved, you can paste a transcript or upload audio or video you are allowed to use.</p>
+                        )}
                     </>
                 )}
 

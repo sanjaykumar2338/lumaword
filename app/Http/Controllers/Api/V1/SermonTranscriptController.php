@@ -23,6 +23,8 @@ class SermonTranscriptController extends Controller
             'transcript' => $request->validated('transcript'),
             'transcript_source' => TranscriptSource::Pasted,
             'transcript_language' => $request->validated('transcript_language'),
+            'provider_caption_id' => null,
+            'provider_retrieved_at' => null,
             'processing_status' => SermonProcessingStatus::TranscriptReady,
             'processing_error' => null,
             'processed_at' => null,

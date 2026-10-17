@@ -18,7 +18,8 @@ class Sermon extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title', 'source_type', 'source_url', 'source_provider', 'processing_status',
+        'title', 'source_type', 'source_url', 'source_provider', 'provider_video_id',
+        'provider_caption_id', 'provider_retrieved_at', 'processing_status',
         'processing_error', 'transcript', 'transcript_source', 'transcript_language',
         'duration_seconds', 'media_path', 'media_original_name', 'media_mime',
         'processing_started_at', 'processing_attempts', 'processed_at',
@@ -36,6 +37,7 @@ class Sermon extends Model
             'processing_attempts' => 'integer',
             'processing_started_at' => 'datetime',
             'processed_at' => 'datetime',
+            'provider_retrieved_at' => 'datetime',
         ];
     }
 

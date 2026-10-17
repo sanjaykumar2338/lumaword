@@ -7,6 +7,7 @@ return [
         'maximum_upload_kilobytes' => (int) env('SERMON_MAX_UPLOAD_KB', 25600),
         'maximum_duration_seconds' => (int) env('SERMON_MAX_DURATION_SECONDS', 7200),
         'daily_processing_per_user' => (int) env('SERMON_DAILY_PROCESSING_LIMIT', 10),
+        'youtube_requests_per_minute' => (int) env('YOUTUBE_REQUESTS_PER_MINUTE', 10),
     ],
     'processing' => [
         'timeout_seconds' => (int) env('SERMON_JOB_TIMEOUT', 180),

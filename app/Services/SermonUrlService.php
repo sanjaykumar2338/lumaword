@@ -43,7 +43,8 @@ class SermonUrlService
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
 
         return match (true) {
-            $host === 'youtu.be', str_ends_with($host, '.youtube.com'), $host === 'youtube.com' => 'youtube',
+            $host === 'youtu.be', str_ends_with($host, '.youtube.com'), $host === 'youtube.com',
+            $host === 'youtube-nocookie.com', str_ends_with($host, '.youtube-nocookie.com') => 'youtube',
             $host === 'vimeo.com', str_ends_with($host, '.vimeo.com') => 'vimeo',
             $host === 'soundcloud.com', str_ends_with($host, '.soundcloud.com') => 'soundcloud',
             default => 'web',

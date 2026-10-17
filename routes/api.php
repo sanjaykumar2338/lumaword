@@ -10,11 +10,13 @@ use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SermonController;
 use App\Http\Controllers\Api\V1\SermonConversationController;
+use App\Http\Controllers\Api\V1\SermonMediaController;
 use App\Http\Controllers\Api\V1\SermonMessageController;
 use App\Http\Controllers\Api\V1\SermonNotesController;
 use App\Http\Controllers\Api\V1\SermonProcessingController;
 use App\Http\Controllers\Api\V1\SermonStatusController;
 use App\Http\Controllers\Api\V1\SermonTranscriptController;
+use App\Http\Controllers\Api\V1\YoutubeConnectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -46,6 +48,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/sermons/{sermon}/transcript', SermonTranscriptController::class)
             ->middleware('throttle:sermon-submission')
             ->name('sermons.transcript.store');
+        Route::post('/sermons/{sermon}/media', SermonMediaController::class)
+            ->middleware('throttle:sermon-submission')
+            ->name('sermons.media.store');
         Route::post('/sermons/{sermon}/process', SermonProcessingController::class)
             ->middleware('throttle:sermon-processing')
             ->name('sermons.process');
@@ -58,5 +63,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/sermons/{sermon}/conversation/messages', [SermonMessageController::class, 'store'])
             ->middleware('throttle:sermon-questions')
             ->name('sermons.conversation.messages.store');
+
+        Route::get('/youtube/connection', [YoutubeConnectionController::class, 'show'])
+            ->name('youtube.connection.show');
+        Route::delete('/youtube/connection', [YoutubeConnectionController::class, 'destroy'])
+            ->middleware('throttle:youtube-connection')
+            ->name('youtube.connection.destroy');
     });
 });

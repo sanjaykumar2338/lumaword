@@ -13,11 +13,14 @@ use App\SermonSourceType;
 use App\Services\SermonProcessingDispatcher;
 use App\Services\SermonProcessingMonitor;
 use App\Services\SermonUrlService;
+use App\Services\YoutubeTranscriptDispatcher;
+use App\Services\YoutubeUrlService;
 use App\TranscriptSource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SermonController extends Controller
@@ -50,6 +53,8 @@ class SermonController extends Controller
         StoreSermonRequest $request,
         SermonUrlService $urlService,
         SermonProcessingDispatcher $dispatcher,
+        YoutubeTranscriptDispatcher $youtubeDispatcher,
+        YoutubeUrlService $youtubeUrlService,
     ): JsonResponse {
         Gate::authorize('create', Sermon::class);
         $data = $request->validated();
@@ -65,12 +70,15 @@ class SermonController extends Controller
             $sourceUrl = $sourceType === SermonSourceType::Url
                 ? $urlService->normalize($data['source_url'])
                 : null;
+            $sourceProvider = $sourceUrl ? $urlService->provider($sourceUrl) : null;
+            $providerVideoId = $sourceProvider === 'youtube' ? $youtubeUrlService->videoId($sourceUrl) : null;
 
             $sermon = $user->sermons()->create([
                 'title' => ($data['title'] ?? null) ?: $this->defaultTitle($sourceType, $request->file('media')?->getClientOriginalName()),
                 'source_type' => $sourceType,
                 'source_url' => $sourceUrl,
-                'source_provider' => $sourceUrl ? $urlService->provider($sourceUrl) : null,
+                'source_provider' => $sourceProvider,
+                'provider_video_id' => $providerVideoId,
                 'processing_status' => match ($sourceType) {
                     SermonSourceType::Url => SermonProcessingStatus::AwaitingTranscript,
                     SermonSourceType::Transcript => SermonProcessingStatus::TranscriptReady,
@@ -94,12 +102,29 @@ class SermonController extends Controller
         if ($sourceType !== SermonSourceType::Url && ($data['auto_process'] ?? true)) {
             $dispatcher->dispatch($sermon, $user);
             $sermon->refresh();
+        } elseif ($sourceType === SermonSourceType::Url
+            && $sermon->source_provider === 'youtube'
+            && ($data['auto_process'] ?? true)
+            && $user->youtubeConnection()->exists()) {
+            try {
+                $youtubeDispatcher->dispatch($sermon, $user);
+            } catch (ValidationException $exception) {
+                $sermon->update([
+                    'processing_status' => SermonProcessingStatus::AwaitingTranscript,
+                    'processing_error' => $exception->errors()['sermon'][0] ?? 'Add an authorized transcript or media file to continue.',
+                ]);
+            }
+            $sermon->refresh();
         }
 
+        $message = match ($sermon->processing_status) {
+            SermonProcessingStatus::RetrievingTranscript => 'Sermon link saved. Luma is checking the connected channel for an authorized caption.',
+            SermonProcessingStatus::AwaitingTranscript => 'Sermon link saved. Add an authorized transcript or media file to continue.',
+            default => 'Sermon submitted for background processing.',
+        };
+
         return (new SermonResource($sermon))
-            ->additional(['message' => $sourceType === SermonSourceType::Url
-                ? 'Sermon link saved. Add an authorized transcript to continue.'
-                : 'Sermon submitted for background processing.'])
+            ->additional(['message' => $message])
             ->response()
             ->setStatusCode(201);
     }

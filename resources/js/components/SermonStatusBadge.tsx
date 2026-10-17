@@ -3,6 +3,7 @@ import type { SermonProcessingStatus } from '../types';
 const labels: Record<SermonProcessingStatus, string> = {
     submitted: 'Submitted',
     awaiting_transcript: 'Needs transcript',
+    retrieving_transcript: 'Checking captions',
     transcribing: 'Transcribing',
     transcript_ready: 'Transcript ready',
     queued: 'Queued',
@@ -12,7 +13,7 @@ const labels: Record<SermonProcessingStatus, string> = {
 };
 
 export function SermonStatusBadge({ status }: { status: SermonProcessingStatus }) {
-    const active = ['submitted', 'transcribing', 'queued', 'analyzing'].includes(status);
+    const active = ['submitted', 'retrieving_transcript', 'transcribing', 'queued', 'analyzing'].includes(status);
     const color = status === 'completed'
         ? 'bg-lime-200 text-moss'
         : status === 'failed'
