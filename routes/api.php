@@ -6,8 +6,12 @@ use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
+use App\Http\Controllers\Api\V1\DevotionalController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReadingPlanController;
+use App\Http\Controllers\Api\V1\ReadingPlanProgressController;
+use App\Http\Controllers\Api\V1\ScriptureController;
 use App\Http\Controllers\Api\V1\SermonController;
 use App\Http\Controllers\Api\V1\SermonConversationController;
 use App\Http\Controllers\Api\V1\SermonMediaController;
@@ -16,6 +20,7 @@ use App\Http\Controllers\Api\V1\SermonNotesController;
 use App\Http\Controllers\Api\V1\SermonProcessingController;
 use App\Http\Controllers\Api\V1\SermonStatusController;
 use App\Http\Controllers\Api\V1\SermonTranscriptController;
+use App\Http\Controllers\Api\V1\UserReadingPlanController;
 use App\Http\Controllers\Api\V1\YoutubeConnectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +47,23 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
         Route::put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');
         Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy'])->name('auth.logout');
+
+        Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
+        Route::get('/devotionals/today', [DevotionalController::class, 'today'])->name('devotionals.today');
+        Route::apiResource('devotionals', DevotionalController::class)->only(['index', 'store', 'show'])
+            ->middlewareFor('store', 'throttle:devotional-generation');
+
+        Route::apiResource('reading-plans', ReadingPlanController::class)
+            ->only(['index', 'show'])
+            ->parameters(['reading-plans' => 'readingPlan']);
+        Route::get('/reading-plan-enrollments', [UserReadingPlanController::class, 'index'])
+            ->name('reading-plan-enrollments.index');
+        Route::get('/reading-plan-enrollments/{userReadingPlan}', [UserReadingPlanController::class, 'show'])
+            ->name('reading-plan-enrollments.show');
+        Route::post('/reading-plans/{readingPlan}/enrollments', [UserReadingPlanController::class, 'store'])
+            ->name('reading-plans.enrollments.store');
+        Route::put('/reading-plan-enrollments/{userReadingPlan}/days/{readingPlanDay}', [ReadingPlanProgressController::class, 'update'])
+            ->name('reading-plan-enrollments.days.update');
 
         Route::apiResource('sermons', SermonController::class)
             ->middlewareFor('store', 'throttle:sermon-submission');

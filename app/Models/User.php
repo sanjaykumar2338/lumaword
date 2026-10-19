@@ -38,6 +38,16 @@ class User extends Authenticatable
         return $this->hasMany(Sermon::class);
     }
 
+    public function devotionals(): HasMany
+    {
+        return $this->hasMany(Devotional::class);
+    }
+
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(UserReadingPlan::class);
+    }
+
     public function sermonConversations(): HasMany
     {
         return $this->hasMany(SermonConversation::class);

@@ -80,3 +80,62 @@ export type SermonMessage = {
     client_request_id: string | null;
     created_at: string;
 };
+
+export type Devotional = {
+    id: number | null;
+    sermon_id?: number | null;
+    source_type: 'daily' | 'passage' | 'sermon';
+    title: string;
+    scripture_key: string;
+    scripture_reference: string;
+    translation: string;
+    scripture_text: string;
+    reflection: string;
+    application: string;
+    prayer: string;
+    is_ai_generated: boolean;
+    generated_at: string | null;
+    created_at?: string;
+};
+
+export type ScriptureOption = {
+    key: string;
+    reference: string;
+    translation: string;
+};
+
+export type ReadingPlanDay = {
+    id: number;
+    day_number: number;
+    title: string;
+    scripture_key: string;
+    scripture_reference: string;
+    translation: string;
+    scripture_text: string;
+};
+
+export type ReadingPlanEnrollmentSummary = {
+    id: number;
+    started_at: string;
+    completed_at: string | null;
+    completed_day_ids: number[];
+};
+
+export type ReadingPlan = {
+    id: number;
+    slug: string;
+    title: string;
+    description: string;
+    duration_days: number;
+    days: ReadingPlanDay[];
+    enrollment: ReadingPlanEnrollmentSummary | null;
+};
+
+export type UserReadingPlan = {
+    id: number;
+    started_at: string;
+    completed_at: string | null;
+    completed_days: number;
+    completed_day_ids: number[];
+    plan: ReadingPlan;
+};

@@ -4,11 +4,13 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import '../css/app.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardPage } from './pages/DashboardPage';
+import { DevotionalsPage } from './pages/DevotionalsPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ReadingPlansPage } from './pages/ReadingPlansPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NewSermonPage } from './pages/NewSermonPage';
@@ -53,6 +55,8 @@ function App() {
             <Route path="/sermons/new" element={<ProtectedRoute><NewSermonPage /></ProtectedRoute>} />
             <Route path="/sermons/:sermonId" element={<ProtectedRoute><SermonDetailPage /></ProtectedRoute>} />
             <Route path="/sermons" element={<ProtectedRoute><SermonLibraryPage /></ProtectedRoute>} />
+            <Route path="/devotionals" element={<ProtectedRoute><DevotionalsPage /></ProtectedRoute>} />
+            <Route path="/reading-plans" element={<ProtectedRoute><ReadingPlansPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>

@@ -55,4 +55,9 @@ class Sermon extends Model
     {
         return $this->hasMany(SermonConversation::class);
     }
+
+    public function devotionals(): HasMany
+    {
+        return $this->hasMany(Devotional::class);
+    }
 }

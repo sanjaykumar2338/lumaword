@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\DevotionalGenerator;
 use App\Contracts\MediaTranscriber;
 use App\Contracts\SermonAnalyzer;
 use App\Contracts\SermonQuestionAnswerer;
+use App\Services\OpenAiDevotionalGenerator;
 use App\Services\OpenAiSermonQuestionAnswerer;
 use App\Services\OpenAiSermonService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -25,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SermonAnalyzer::class, OpenAiSermonService::class);
         $this->app->bind(MediaTranscriber::class, OpenAiSermonService::class);
         $this->app->bind(SermonQuestionAnswerer::class, OpenAiSermonQuestionAnswerer::class);
+        $this->app->bind(DevotionalGenerator::class, OpenAiDevotionalGenerator::class);
     }
 
     /**
@@ -61,6 +64,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('sermon-questions', fn (Request $request): Limit => Limit::perDay(
             (int) config('sermons.qa.daily_questions_per_user'),
+        )->by((string) ($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('devotional-generation', fn (Request $request): Limit => Limit::perDay(
+            (int) config('devotionals.daily_generation_per_user'),
         )->by((string) ($request->user()?->id ?? $request->ip())));
     }
 
