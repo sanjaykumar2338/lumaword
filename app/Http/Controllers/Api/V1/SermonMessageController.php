@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\DailyActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AskSermonQuestionRequest;
 use App\Http\Resources\V1\SermonConversationResource;
@@ -9,6 +10,7 @@ use App\Http\Resources\V1\SermonMessageResource;
 use App\Models\Sermon;
 use App\Models\SermonConversation;
 use App\Services\AskSermonQuestion;
+use App\Services\DailyActivityRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -42,6 +44,7 @@ class SermonMessageController extends Controller
         AskSermonQuestionRequest $request,
         Sermon $sermon,
         AskSermonQuestion $questions,
+        DailyActivityRecorder $activityRecorder,
     ): JsonResponse {
         $result = $questions->handle(
             $request->user(),
@@ -49,6 +52,7 @@ class SermonMessageController extends Controller
             $request->validated('question'),
             $request->validated('client_request_id'),
         );
+        $activityRecorder->record($request->user(), DailyActivityType::SermonStudy);
 
         return response()->json([
             'data' => [

@@ -6,13 +6,14 @@ import { SermonStatusBadge } from '../components/SermonStatusBadge';
 import { SermonSubmissionForm } from '../components/SermonSubmissionForm';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
-import type { Devotional, PaginatedResponse, ResourceResponse, Sermon, UserReadingPlan } from '../types';
+import type { DailyActivitySummary, Devotional, PaginatedResponse, ResourceResponse, Sermon, UserReadingPlan } from '../types';
 
 export function DashboardPage() {
     const { user } = useAuth();
     const [recent, setRecent] = useState<Sermon[]>([]);
     const [today, setToday] = useState<Devotional | null>(null);
     const [readingPlans, setReadingPlans] = useState<UserReadingPlan[]>([]);
+    const [activity, setActivity] = useState<DailyActivitySummary | null>(null);
     const [habitsLoading, setHabitsLoading] = useState(true);
     const [habitsError, setHabitsError] = useState(false);
 
@@ -26,9 +27,11 @@ export function DashboardPage() {
         Promise.all([
             apiRequest<ResourceResponse<Devotional>>('/api/v1/devotionals/today'),
             apiRequest<{ data: UserReadingPlan[] }>('/api/v1/reading-plan-enrollments'),
-        ]).then(([daily, enrollments]) => {
+            apiRequest<ResourceResponse<DailyActivitySummary>>('/api/v1/daily-activity'),
+        ]).then(([daily, enrollments, activityResponse]) => {
             setToday(daily.data);
             setReadingPlans(enrollments.data);
+            setActivity(activityResponse.data);
         }).catch(() => setHabitsError(true)).finally(() => setHabitsLoading(false));
     }, []);
 
@@ -57,6 +60,26 @@ export function DashboardPage() {
                     </div>
                 )}
             </section>
+
+            {activity && (
+                <section className="mt-8 rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8" aria-labelledby="daily-activity-title">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Daily activity</p><h2 id="daily-activity-title" className="mt-2 text-2xl font-semibold tracking-[-0.04em]">Small steps, faithfully repeated.</h2></div>
+                        <Link to="/devotionals" className="text-sm font-semibold text-moss hover:underline">Open today’s devotional →</Link>
+                    </div>
+                    <div className="mt-6 grid grid-cols-3 gap-3">
+                        {[
+                            ['Current streak', activity.current_streak],
+                            ['Longest streak', activity.longest_streak],
+                            ['Active days', activity.total_active_days],
+                        ].map(([label, value]) => <div key={label} className="rounded-2xl bg-white p-4 text-center"><strong className="block text-2xl text-ink sm:text-3xl">{value}</strong><span className="mt-1 block text-xs text-stone-500">{label}</span></div>)}
+                    </div>
+                    <div className="mt-5 grid grid-cols-7 gap-2" aria-label="Activity over the last seven days">
+                        {activity.last_seven_days.map((day) => <div key={day.date} className="text-center"><span className="text-[0.65rem] font-semibold uppercase text-stone-500">{day.label}</span><div title={`${day.date}: ${day.active ? 'Completed' : 'No activity'}`} className={`mx-auto mt-2 grid size-8 place-items-center rounded-full text-xs font-bold sm:size-10 ${day.active ? 'bg-acid text-ink' : 'border border-stone-300 bg-white text-stone-400'}`}>{day.active ? '✓' : '–'}</div></div>)}
+                    </div>
+                    <p className="mt-4 text-xs text-stone-500">Days follow {activity.timezone}. A streak remains current through today; after a full missed day, it resets.</p>
+                </section>
+            )}
 
             <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <div>

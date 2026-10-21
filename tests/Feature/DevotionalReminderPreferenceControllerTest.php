@@ -1,0 +1,99 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\PushSubscription;
+use App\Models\User;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Tests\TestCase;
+
+class DevotionalReminderPreferenceControllerTest extends TestCase
+{
+    use LazilyRefreshDatabase;
+
+    public function test_reminder_and_subscription_endpoints_require_authentication(): void
+    {
+        $this->getJson('/api/v1/devotional-reminder-preferences')->assertUnauthorized();
+        $this->putJson('/api/v1/devotional-reminder-preferences', [])->assertUnauthorized();
+        $this->postJson('/api/v1/push-subscriptions', [])->assertUnauthorized();
+    }
+
+    public function test_user_can_update_notification_preferences(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->putJson('/api/v1/devotional-reminder-preferences', [
+            'enabled' => true,
+            'reminder_time' => '06:45',
+            'timezone' => 'Asia/Kolkata',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', true)
+            ->assertJsonPath('data.reminder_time', '06:45')
+            ->assertJsonPath('data.timezone', 'Asia/Kolkata');
+
+        $this->assertDatabaseHas('devotional_reminder_preferences', [
+            'user_id' => $user->id,
+            'enabled' => true,
+            'reminder_time' => '06:45',
+            'timezone' => 'Asia/Kolkata',
+        ]);
+    }
+
+    public function test_invalid_time_and_timezone_are_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->putJson('/api/v1/devotional-reminder-preferences', [
+            'enabled' => true,
+            'reminder_time' => '25:00',
+            'timezone' => 'Moon/SeaOfTranquility',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reminder_time', 'timezone']);
+
+        $this->assertDatabaseCount('devotional_reminder_preferences', 0);
+    }
+
+    public function test_push_subscription_is_encrypted_and_idempotent(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->subscriptionPayload();
+
+        $this->actingAs($user)->postJson('/api/v1/push-subscriptions', $payload)->assertCreated();
+        $this->actingAs($user)->postJson('/api/v1/push-subscriptions', $payload)->assertOk();
+
+        $subscription = PushSubscription::query()->sole();
+        $this->assertSame($payload['endpoint'], $subscription->endpoint);
+        $this->assertNotSame($payload['endpoint'], $subscription->getRawOriginal('endpoint'));
+        $this->assertNotSame($payload['keys']['auth'], $subscription->getRawOriginal('auth_token'));
+        $this->assertDatabaseCount('push_subscriptions', 1);
+    }
+
+    public function test_user_cannot_claim_or_delete_another_users_subscription(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $payload = $this->subscriptionPayload();
+        $this->actingAs($owner)->postJson('/api/v1/push-subscriptions', $payload)->assertCreated();
+
+        $this->actingAs($otherUser)->postJson('/api/v1/push-subscriptions', $payload)->assertConflict();
+        $this->actingAs($otherUser)->deleteJson('/api/v1/push-subscriptions', ['endpoint' => $payload['endpoint']])->assertOk();
+
+        $this->assertDatabaseCount('push_subscriptions', 1);
+        $this->assertDatabaseHas('push_subscriptions', ['user_id' => $owner->id]);
+    }
+
+    /** @return array{endpoint: string, keys: array{p256dh: string, auth: string}, content_encoding: string} */
+    private function subscriptionPayload(): array
+    {
+        return [
+            'endpoint' => 'https://push.example.test/subscriptions/browser-1',
+            'keys' => [
+                'p256dh' => str_repeat('a', 87),
+                'auth' => str_repeat('b', 22),
+            ],
+            'content_encoding' => 'aes128gcm',
+        ];
+    }
+}

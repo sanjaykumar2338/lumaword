@@ -2,6 +2,12 @@
 
 return [
 
+    'web_push' => [
+        'vapid_subject' => env('VAPID_SUBJECT'),
+        'vapid_public_key' => env('VAPID_PUBLIC_KEY'),
+        'vapid_private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

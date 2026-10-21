@@ -6,9 +6,13 @@ use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
+use App\Http\Controllers\Api\V1\DailyActivityController;
+use App\Http\Controllers\Api\V1\DevotionalActivityController;
 use App\Http\Controllers\Api\V1\DevotionalController;
+use App\Http\Controllers\Api\V1\DevotionalReminderPreferenceController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use App\Http\Controllers\Api\V1\ReadingPlanController;
 use App\Http\Controllers\Api\V1\ReadingPlanProgressController;
 use App\Http\Controllers\Api\V1\ScriptureController;
@@ -50,8 +54,19 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
         Route::get('/devotionals/today', [DevotionalController::class, 'today'])->name('devotionals.today');
+        Route::post('/devotionals/activity', DevotionalActivityController::class)->name('devotionals.activity.store');
         Route::apiResource('devotionals', DevotionalController::class)->only(['index', 'store', 'show'])
             ->middlewareFor('store', 'throttle:devotional-generation');
+
+        Route::get('/daily-activity', DailyActivityController::class)->name('daily-activity.show');
+        Route::get('/devotional-reminder-preferences', [DevotionalReminderPreferenceController::class, 'show'])
+            ->name('devotional-reminder-preferences.show');
+        Route::put('/devotional-reminder-preferences', [DevotionalReminderPreferenceController::class, 'update'])
+            ->name('devotional-reminder-preferences.update');
+        Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])
+            ->name('push-subscriptions.store');
+        Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])
+            ->name('push-subscriptions.destroy');
 
         Route::apiResource('reading-plans', ReadingPlanController::class)
             ->only(['index', 'show'])

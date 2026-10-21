@@ -6,6 +6,8 @@ use App\Contracts\DevotionalGenerator;
 use App\Contracts\MediaTranscriber;
 use App\Contracts\SermonAnalyzer;
 use App\Contracts\SermonQuestionAnswerer;
+use App\Contracts\WebPushGateway;
+use App\Services\MinishlinkWebPushGateway;
 use App\Services\OpenAiDevotionalGenerator;
 use App\Services\OpenAiSermonQuestionAnswerer;
 use App\Services\OpenAiSermonService;
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MediaTranscriber::class, OpenAiSermonService::class);
         $this->app->bind(SermonQuestionAnswerer::class, OpenAiSermonQuestionAnswerer::class);
         $this->app->bind(DevotionalGenerator::class, OpenAiDevotionalGenerator::class);
+        $this->app->bind(WebPushGateway::class, MinishlinkWebPushGateway::class);
     }
 
     /**

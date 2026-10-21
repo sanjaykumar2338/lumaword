@@ -32,6 +32,26 @@ Open http://localhost:8000. Run the durable queue worker in another terminal:
 
 The worker timeout must remain lower than DB_QUEUE_RETRY_AFTER.
 
+## Daily activity and devotional reminders
+
+Meaningful devotional reading, reading-plan completion, and Ask Luma sermon study count toward one active day in the user’s configured timezone. Multiple activities on the same local calendar date still count once. The current streak includes today when active, otherwise it may continue through yesterday; after one complete missed local day it resets. Changing timezone affects new activity and reminder calculations only—historical activity dates are not rewritten.
+
+Browser reminders use standards-based Web Push and require HTTPS, a running queue worker, and Laravel Scheduler. Install dependencies with `composer install`, then create one persistent VAPID key pair:
+
+    php artisan tinker --execute='var_export(\Minishlink\WebPush\VAPID::createVapidKeys());'
+
+Store the resulting values only in the production `.env`:
+
+    VAPID_SUBJECT=mailto:notifications@example.com
+    VAPID_PUBLIC_KEY=
+    VAPID_PRIVATE_KEY=
+
+The public key is shared with authenticated browsers; the private key never leaves the server. Do not rotate these keys casually, because existing browser subscriptions are tied to them. Add the scheduler to the production user’s crontab:
+
+    * * * * * cd /path-to-lumaword && php artisan schedule:run >> /dev/null 2>&1
+
+`devotional-reminders:dispatch` runs each minute, evaluates each preference in its IANA timezone, creates one delivery record per user/local date, and queues work on the existing `default` queue. It skips users who disabled reminders, have no subscription, or already completed devotional activity that day. Expired subscriptions are removed. Web Push supports compatible desktop and mobile browsers; it is not native iOS app push.
+
 ## OpenAI setup
 
 Keep credentials server-side:

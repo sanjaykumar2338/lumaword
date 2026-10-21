@@ -20,6 +20,8 @@ export function DevotionalsPage() {
     const [sermonId, setSermonId] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [activityRecorded, setActivityRecorded] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -63,6 +65,20 @@ export function DevotionalsPage() {
         }
     };
 
+    const recordActivity = async () => {
+        setIsRecording(true);
+        setError('');
+
+        try {
+            await apiRequest('/api/v1/devotionals/activity', { method: 'POST' });
+            setActivityRecorded(true);
+        } catch {
+            setError('Your devotional is still available, but today’s activity could not be recorded. Please try again.');
+        } finally {
+            setIsRecording(false);
+        }
+    };
+
     return (
         <AppShell>
             <header className="border-b border-black/10 pb-8">
@@ -77,7 +93,7 @@ export function DevotionalsPage() {
                 <div className="mt-8 grid min-h-64 place-items-center rounded-[1.75rem] border border-dashed border-black/15 text-sm text-stone-500">Loading devotionals…</div>
             ) : (
                 <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                    <div>{selected && <DevotionalView devotional={selected} />}</div>
+                    <div>{selected && <><DevotionalView devotional={selected} /><div className="mt-4 flex flex-col gap-3 rounded-2xl border border-black/10 bg-paper p-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-stone-600">When you finish reading and reflecting, record today as an active day.</p><button type="button" disabled={isRecording || activityRecorded} onClick={recordActivity} className="shrink-0 rounded-xl bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:cursor-default disabled:bg-moss">{activityRecorded ? 'Devotional completed ✓' : isRecording ? 'Recording…' : 'Mark devotional complete'}</button></div></>}</div>
                     <aside className="grid content-start gap-6">
                         <form onSubmit={generate} className="rounded-[1.75rem] bg-ink p-6 text-white">
                             <p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">Personalize</p>

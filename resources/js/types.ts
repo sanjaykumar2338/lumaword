@@ -139,3 +139,25 @@ export type UserReadingPlan = {
     completed_day_ids: number[];
     plan: ReadingPlan;
 };
+
+export type DailyActivitySummary = {
+    current_streak: number;
+    longest_streak: number;
+    total_active_days: number;
+    timezone: string;
+    last_seven_days: Array<{
+        date: string;
+        label: string;
+        active: boolean;
+        is_today: boolean;
+    }>;
+};
+
+export type DevotionalReminderPreference = {
+    enabled: boolean;
+    reminder_time: string;
+    timezone: string;
+    push_supported: boolean;
+    vapid_public_key: string | null;
+    subscription_count: number;
+};

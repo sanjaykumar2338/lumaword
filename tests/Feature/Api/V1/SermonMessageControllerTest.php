@@ -99,6 +99,10 @@ class SermonMessageControllerTest extends TestCase
             'role' => SermonMessage::ROLE_ASSISTANT,
             'content' => 'The pastor described forgiveness as an ongoing choice.',
         ]);
+        $this->assertDatabaseHas('daily_activities', [
+            'user_id' => $user->id,
+            'sermon_study' => true,
+        ]);
     }
 
     public function test_follow_up_question_receives_recent_conversation_context(): void

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\DailyActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UpdateReadingPlanProgressRequest;
 use App\Http\Resources\V1\UserReadingPlanResource;
 use App\Models\ReadingPlanDay;
 use App\Models\UserReadingPlan;
+use App\Services\DailyActivityRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -16,6 +18,7 @@ class ReadingPlanProgressController extends Controller
         UpdateReadingPlanProgressRequest $request,
         UserReadingPlan $userReadingPlan,
         ReadingPlanDay $readingPlanDay,
+        DailyActivityRecorder $activityRecorder,
     ): UserReadingPlanResource {
         Gate::authorize('update', $userReadingPlan);
         abort_unless($readingPlanDay->reading_plan_id === $userReadingPlan->reading_plan_id, 404);
@@ -38,6 +41,10 @@ class ReadingPlanProgressController extends Controller
                 'completed_at' => $completedDays === $totalDays ? now() : null,
             ]);
         });
+
+        if ($request->boolean('completed')) {
+            $activityRecorder->record($request->user(), DailyActivityType::ReadingPlanCompleted);
+        }
 
         return new UserReadingPlanResource(
             $userReadingPlan->refresh()

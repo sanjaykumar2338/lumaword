@@ -57,4 +57,24 @@ class User extends Authenticatable
     {
         return $this->hasOne(YoutubeConnection::class);
     }
+
+    public function dailyActivities(): HasMany
+    {
+        return $this->hasMany(DailyActivity::class);
+    }
+
+    public function devotionalReminderPreference(): HasOne
+    {
+        return $this->hasOne(DevotionalReminderPreference::class);
+    }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    public function devotionalReminderDeliveries(): HasMany
+    {
+        return $this->hasMany(DevotionalReminderDelivery::class);
+    }
 }
