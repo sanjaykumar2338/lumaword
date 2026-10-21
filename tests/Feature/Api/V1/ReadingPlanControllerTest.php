@@ -51,7 +51,7 @@ class ReadingPlanControllerTest extends TestCase
         $this->assertDatabaseCount('user_reading_plans', 1);
     }
 
-    public function test_marking_day_complete_twice_keeps_one_progress_entry(): void
+    public function test_marking_day_complete_twice_returns_and_persists_one_progress_entry(): void
     {
         $user = User::factory()->create();
         $plan = ReadingPlan::factory()->create(['duration_days' => 7]);
@@ -59,8 +59,18 @@ class ReadingPlanControllerTest extends TestCase
         $enrollment = UserReadingPlan::factory()->for($user)->for($plan, 'readingPlan')->create();
 
         $url = "/api/v1/reading-plan-enrollments/{$enrollment->id}/days/{$day->id}";
-        $this->actingAs($user)->putJson($url, ['completed' => true])->assertOk();
-        $this->actingAs($user)->putJson($url, ['completed' => true])->assertOk();
+        $this->actingAs($user)->putJson($url, ['completed' => true])
+            ->assertOk()
+            ->assertJsonPath('data.completed_days', 1)
+            ->assertJsonPath('data.completed_day_ids.0', $day->id);
+        $this->actingAs($user)->putJson($url, ['completed' => true])
+            ->assertOk()
+            ->assertJsonPath('data.completed_days', 1)
+            ->assertJsonPath('data.completed_day_ids.0', $day->id);
+
+        $this->actingAs($user)->getJson('/api/v1/reading-plans')
+            ->assertOk()
+            ->assertJsonPath('data.0.enrollment.completed_day_ids.0', $day->id);
 
         $this->assertDatabaseCount('reading_plan_progress', 1);
     }
@@ -87,8 +97,17 @@ class ReadingPlanControllerTest extends TestCase
         $this->actingAs($user)->putJson(
             "/api/v1/reading-plan-enrollments/{$enrollment->id}/days/{$days->first()->id}",
             ['completed' => false],
-        )->assertOk()->assertJsonPath('data.completed_at', null);
+        )
+            ->assertOk()
+            ->assertJsonPath('data.completed_at', null)
+            ->assertJsonPath('data.completed_days', 1)
+            ->assertJsonPath('data.completed_day_ids.0', $days->last()->id);
+
         $this->assertDatabaseCount('reading_plan_progress', 1);
+        $this->assertDatabaseMissing('reading_plan_progress', [
+            'user_reading_plan_id' => $enrollment->id,
+            'reading_plan_day_id' => $days->first()->id,
+        ]);
     }
 
     public function test_user_cannot_update_another_users_progress(): void

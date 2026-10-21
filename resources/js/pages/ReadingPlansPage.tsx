@@ -11,6 +11,7 @@ export function ReadingPlansPage() {
     const [busyDayId, setBusyDayId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
     const [error, setError] = useState('');
+    const [progressError, setProgressError] = useState<{ dayId: number; message: string } | null>(null);
 
     useEffect(() => {
         apiRequest<{ data: ReadingPlan[] }>('/api/v1/reading-plans')
@@ -55,7 +56,7 @@ export function ReadingPlansPage() {
     const toggleDay = async (dayId: number, completed: boolean) => {
         if (!selected?.enrollment) return;
         setBusyDayId(dayId);
-        setError('');
+        setProgressError(null);
         try {
             const response = await apiRequest<ResourceResponse<UserReadingPlan>>(`/api/v1/reading-plan-enrollments/${selected.enrollment.id}/days/${dayId}`, {
                 method: 'PUT',
@@ -63,7 +64,12 @@ export function ReadingPlansPage() {
             });
             updateEnrollment(response.data);
         } catch (requestError) {
-            setError(requestError instanceof ApiError ? requestError.message : 'Progress could not be updated. Please try again.');
+            setProgressError({
+                dayId,
+                message: requestError instanceof ApiError
+                    ? requestError.message
+                    : 'Progress could not be updated. Please try again.',
+            });
         } finally {
             setBusyDayId(null);
         }
@@ -93,7 +99,7 @@ export function ReadingPlansPage() {
                     {selected && <section>
                         <div className="rounded-[1.75rem] bg-ink p-6 text-white sm:p-8">
                             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">{selected.duration_days}-day plan</p><h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{selected.title}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-stone-300">{selected.description}</p></div>{!selected.enrollment && <button onClick={start} disabled={isStarting} className="shrink-0 rounded-xl bg-acid px-5 py-3 text-sm font-bold text-ink disabled:opacity-60">{isStarting ? 'Starting…' : 'Start this plan'}</button>}</div>
-                            {selected.enrollment && <div className="mt-6"><div className="flex justify-between text-xs"><span>{selected.enrollment.completed_at ? 'Plan complete' : 'Your progress'}</span><span>{completedIds.length}/{selected.duration_days} days</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-acid transition-all" style={{ width: `${percent}%` }} /></div></div>}
+                            {selected.enrollment && <div className="mt-6"><div className="flex justify-between text-xs" aria-live="polite"><span>{selected.enrollment.completed_at ? 'Plan complete' : 'Your progress'}</span><span>{completedIds.length}/{selected.duration_days} days</span></div><div role="progressbar" aria-label={`${selected.title} progress`} aria-valuemin={0} aria-valuemax={selected.duration_days} aria-valuenow={completedIds.length} className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-acid transition-all" style={{ width: `${percent}%` }} /></div></div>}
                         </div>
 
                         <div className="mt-5 grid gap-3">
@@ -102,10 +108,30 @@ export function ReadingPlansPage() {
                                 const open = openDayId === day.id;
                                 return <article key={day.id} className={`rounded-2xl border bg-paper ${completed ? 'border-moss/30' : 'border-black/10'}`}>
                                     <div className="flex items-center gap-3 p-4 sm:p-5">
-                                        <button type="button" disabled={!selected.enrollment || busyDayId === day.id} onClick={() => toggleDay(day.id, !completed)} aria-label={`${completed ? 'Mark incomplete' : 'Mark complete'}: day ${day.day_number}`} className={`grid size-10 shrink-0 place-items-center rounded-full border text-sm font-bold ${completed ? 'border-moss bg-moss text-white' : 'border-stone-300 text-stone-500'} disabled:opacity-40`}>{busyDayId === day.id ? '…' : completed ? '✓' : day.day_number}</button>
+                                        <span aria-hidden="true" className={`grid size-10 shrink-0 place-items-center rounded-full border text-sm font-bold ${completed ? 'border-moss bg-moss text-white' : 'border-stone-300 text-stone-500'}`}>{completed ? '✓' : day.day_number}</span>
                                         <button type="button" onClick={() => setOpenDayId(open ? null : day.id)} aria-expanded={open} className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"><span><span className="block font-semibold">{day.title}</span><span className="mt-1 block text-sm text-stone-500">{day.scripture_reference} · {day.translation}</span></span><span className="text-xl text-stone-400" aria-hidden="true">{open ? '−' : '+'}</span></button>
                                     </div>
-                                    {open && <div className="border-t border-black/10 px-5 py-6 sm:px-16"><p className="text-xs font-bold uppercase tracking-[0.18em] text-moss">Exact Scripture · {day.translation}</p><p className="mt-3 whitespace-pre-line font-serif leading-8 text-stone-800">{day.scripture_text}</p>{!selected.enrollment && <p className="mt-5 rounded-xl bg-acid/30 p-4 text-sm text-moss">Start this plan to mark each day complete.</p>}</div>}
+                                    {open && <div className="border-t border-black/10 px-5 py-6 sm:px-16">
+                                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-moss">Exact Scripture · {day.translation}</p>
+                                        <p className="mt-3 whitespace-pre-line font-serif leading-8 text-stone-800">{day.scripture_text}</p>
+                                        {!selected.enrollment ? <p className="mt-5 rounded-xl bg-acid/30 p-4 text-sm text-moss">Start this plan to mark each day complete.</p> : <div className={`mt-6 rounded-xl border p-4 ${completed ? 'border-moss/30 bg-moss/5' : 'border-black/10 bg-white/60'}`}>
+                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                <div>
+                                                    <p className="font-semibold text-ink">{completed ? 'Completed' : 'Finished today’s reading?'}</p>
+                                                    <p className="mt-1 text-sm text-stone-600">{completed ? 'This day is included in your plan progress.' : 'Save this day to update your progress.'}</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleDay(day.id, !completed)}
+                                                    disabled={busyDayId !== null}
+                                                    className={`shrink-0 rounded-xl px-5 py-3 text-sm font-bold transition disabled:cursor-wait disabled:opacity-60 ${completed ? 'border border-moss/30 bg-white text-moss hover:border-moss' : 'bg-moss text-white hover:bg-ink'}`}
+                                                >
+                                                    {busyDayId === day.id ? (completed ? 'Undoing…' : 'Saving…') : completed ? 'Undo completion' : 'Mark as complete'}
+                                                </button>
+                                            </div>
+                                            {progressError?.dayId === day.id && <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">{progressError.message}</p>}
+                                        </div>}
+                                    </div>}
                                 </article>;
                             })}
                         </div>
