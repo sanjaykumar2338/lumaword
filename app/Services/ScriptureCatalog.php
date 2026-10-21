@@ -13,7 +13,7 @@ class ScriptureCatalog
         $passage = config("scripture.passages.{$key}");
 
         if (! is_array($passage)) {
-            throw new InvalidArgumentException('The selected Scripture passage is unavailable.');
+            throw new InvalidArgumentException("Scripture passage [{$key}] is not defined in the catalog.");
         }
 
         return $passage;

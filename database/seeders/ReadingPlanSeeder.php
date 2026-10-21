@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ReadingPlan;
+use App\Services\ScriptureCatalog;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -11,12 +12,21 @@ class ReadingPlanSeeder extends Seeder
 {
     use WithoutModelEvents;
 
+    public function __construct(private readonly ScriptureCatalog $scriptures) {}
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $readings = $this->readings();
+        $readings = array_map(function (array $reading): array {
+            $scripture = $this->scriptures->find($reading['key']);
+
+            return [
+                ...$reading,
+                'reference' => $scripture['reference'],
+            ];
+        }, $this->readings());
 
         DB::transaction(function () use ($readings): void {
             foreach ($this->plans() as $definition) {
@@ -33,13 +43,12 @@ class ReadingPlanSeeder extends Seeder
                 $plan->days()->where('day_number', '>', $definition['duration_days'])->delete();
 
                 foreach (array_slice($readings, 0, $definition['duration_days']) as $index => $reading) {
-                    $scripture = config("scripture.passages.{$reading['key']}");
                     $plan->days()->updateOrCreate(
                         ['day_number' => $index + 1],
                         [
                             'title' => $reading['title'],
                             'scripture_key' => $reading['key'],
-                            'scripture_reference' => $scripture['reference'],
+                            'scripture_reference' => $reading['reference'],
                         ],
                     );
                 }
