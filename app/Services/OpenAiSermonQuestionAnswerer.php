@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\SermonQuestionAnswerer;
 use App\Models\Sermon;
+use App\Models\SermonMessage;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -34,7 +35,10 @@ class OpenAiSermonQuestionAnswerer implements SermonQuestionAnswerer
         foreach ($recentMessages as $message) {
             $input[] = [
                 'role' => $message['role'],
-                'content' => [['type' => 'input_text', 'text' => $message['content']]],
+                'content' => [[
+                    'type' => $message['role'] === SermonMessage::ROLE_ASSISTANT ? 'output_text' : 'input_text',
+                    'text' => $message['content'],
+                ]],
             ];
         }
 

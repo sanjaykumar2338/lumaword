@@ -58,4 +58,61 @@ class OpenAiSermonQuestionAnswererTest extends TestCase
                 && ! str_contains($sourceText, 'community announcements');
         });
     }
+
+    public function test_multi_turn_history_uses_role_specific_responses_api_content_types(): void
+    {
+        config(['services.openai.key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['https://api.openai.com/v1/responses' => Http::response([
+            'id' => 'resp_follow_up',
+            'output' => [['content' => [[
+                'type' => 'output_text',
+                'text' => json_encode([
+                    'answer' => 'The follow-up answer stays grounded in the sermon.',
+                    'source_indices' => [1],
+                    'bible_references' => [],
+                ], JSON_THROW_ON_ERROR),
+            ]]]],
+            'usage' => ['input_tokens' => 240, 'output_tokens' => 35],
+        ])]);
+        $sermon = new Sermon([
+            'transcript' => 'The preacher described forgiveness as a repeated decision and explained how to practice it each day.',
+        ]);
+        $sermon->id = 92;
+        $sermon->setRelation('notes', null);
+        $history = new Collection([
+            ['role' => 'user', 'content' => 'What did the preacher say about forgiveness?'],
+            ['role' => 'assistant', 'content' => 'The preacher called forgiveness a repeated decision.'],
+        ]);
+
+        $result = (new OpenAiSermonQuestionAnswerer(new SermonTranscriptContextSelector))->answer(
+            $sermon,
+            'How can I practice that each day?',
+            $history,
+            '08f90074-75c5-4cd8-93de-bdd4ed1a77c8',
+        );
+
+        $this->assertSame('The follow-up answer stays grounded in the sermon.', $result['content']);
+        $this->assertSame('Transcript section 1', $result['sources'][0]['section']);
+        Http::assertSent(function ($request): bool {
+            $input = $request['input'];
+
+            return $input[0]['role'] === 'developer'
+                && $input[0]['content'][0]['type'] === 'input_text'
+                && $input[1]['role'] === 'user'
+                && $input[1]['content'][0]['type'] === 'input_text'
+                && $input[2] === [
+                    'role' => 'user',
+                    'content' => [['type' => 'input_text', 'text' => 'What did the preacher say about forgiveness?']],
+                ]
+                && $input[3] === [
+                    'role' => 'assistant',
+                    'content' => [['type' => 'output_text', 'text' => 'The preacher called forgiveness a repeated decision.']],
+                ]
+                && $input[4] === [
+                    'role' => 'user',
+                    'content' => [['type' => 'input_text', 'text' => 'How can I practice that each day?']],
+                ];
+        });
+    }
 }

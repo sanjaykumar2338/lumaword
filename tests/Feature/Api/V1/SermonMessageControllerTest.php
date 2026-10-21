@@ -150,6 +150,7 @@ class SermonMessageControllerTest extends TestCase
             'client_request_id' => $requestId,
             'status' => SermonMessage::STATUS_FAILED,
         ]);
+        $this->assertDatabaseCount('sermon_messages', 1);
 
         $this->mockSuccessfulAnswer();
         $this->actingAs($user)->postJson("/api/v1/sermons/{$sermon->id}/conversation/messages", [
@@ -158,6 +159,16 @@ class SermonMessageControllerTest extends TestCase
         ])->assertCreated();
         $this->assertDatabaseCount('sermon_conversations', 1);
         $this->assertDatabaseCount('sermon_messages', 2);
+        $this->assertDatabaseHas('sermon_messages', [
+            'client_request_id' => $requestId,
+            'role' => SermonMessage::ROLE_USER,
+            'content' => 'What is the main point?',
+            'status' => SermonMessage::STATUS_COMPLETED,
+        ]);
+        $this->assertDatabaseHas('sermon_messages', [
+            'role' => SermonMessage::ROLE_ASSISTANT,
+            'content' => 'The pastor described forgiveness as an ongoing choice.',
+        ]);
     }
 
     public function test_duplicate_completed_request_returns_the_existing_answer(): void
