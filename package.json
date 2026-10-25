@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "test:frontend": "tsc resources/js/lib/browserPush.ts --ignoreConfig --target ES2022 --module ES2022 --lib ES2022,DOM --strict --skipLibCheck --outDir storage/framework/testing/frontend && node --test tests/Frontend/browserPush.test.mjs",
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {

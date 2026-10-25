@@ -3,6 +3,13 @@ import { AppShell } from '../components/AppShell';
 import { FormField } from '../components/FormField';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
+import {
+    BrowserPushError,
+    disableBrowserPush as unsubscribeBrowserPush,
+    enableBrowserPush as subscribeBrowserPush,
+    getCurrentBrowserPushSubscription,
+    isBrowserPushAvailable,
+} from '../lib/browserPush';
 import type { DevotionalReminderPreference, MessageResponse, ResourceResponse, User } from '../types';
 
 const commonTimezones = ['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Africa/Johannesburg', 'Asia/Kolkata', 'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland'];
@@ -18,7 +25,9 @@ export function SettingsPage() {
     const [reminder, setReminder] = useState<DevotionalReminderPreference | null>(null);
     const [reminderLoading, setReminderLoading] = useState(true);
     const [reminderWorking, setReminderWorking] = useState(false);
-    const browserPushAvailable = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const browserPushAvailable = isBrowserPushAvailable();
+    const [browserSubscription, setBrowserSubscription] = useState<PushSubscription | null>(null);
+    const [browserSubscriptionLoading, setBrowserSubscriptionLoading] = useState(browserPushAvailable);
 
     useEffect(() => {
         apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences')
@@ -26,6 +35,29 @@ export function SettingsPage() {
             .catch(() => setReminderErrors({ enabled: ['Reminder settings could not be loaded. Please refresh and try again.'] }))
             .finally(() => setReminderLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (!browserPushAvailable) {
+            return;
+        }
+
+        let current = true;
+
+        getCurrentBrowserPushSubscription()
+            .then((subscription) => {
+                if (current) setBrowserSubscription(subscription);
+            })
+            .catch((error) => {
+                if (current) setReminderErrors((errors) => ({ ...errors, enabled: [browserPushErrorMessage(error)] }));
+            })
+            .finally(() => {
+                if (current) setBrowserSubscriptionLoading(false);
+            });
+
+        return () => {
+            current = false;
+        };
+    }, [browserPushAvailable]);
 
     const updateProfile = async (event: FormEvent) => {
         event.preventDefault(); setProfileErrors({}); setNotice('');
@@ -52,13 +84,9 @@ export function SettingsPage() {
         if (!reminder) return;
 
         setReminderWorking(true); setReminderErrors({}); setNotice('');
-        const values = { ...reminder, ...overrides };
 
         try {
-            const response = await apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences', {
-                method: 'PUT',
-                body: JSON.stringify({ enabled: values.enabled, reminder_time: values.reminder_time, timezone: values.timezone }),
-            });
+            const response = await updateReminderPreference(reminder, overrides);
             setReminder(response.data); setNotice(response.message ?? 'Reminder preferences updated.');
         } catch (error) {
             setReminderErrors(error instanceof ApiError ? error.errors : { enabled: ['Unable to update reminder preferences.'] });
@@ -73,41 +101,48 @@ export function SettingsPage() {
         setReminderWorking(true); setReminderErrors({}); setNotice('');
 
         try {
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') throw new Error('Notification permission was not granted.');
-
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
-            const existing = await registration.pushManager.getSubscription();
-            const subscription = existing ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(reminder.vapid_public_key) });
-            const serialized = subscription.toJSON();
-
-            await apiRequest('/api/v1/push-subscriptions', { method: 'POST', body: JSON.stringify({ endpoint: subscription.endpoint, keys: serialized.keys, content_encoding: 'aes128gcm' }) });
-            await saveReminder(undefined, { enabled: true, subscription_count: 1 });
+            const subscription = await subscribeBrowserPush(reminder.vapid_public_key, async (payload) => {
+                await apiRequest('/api/v1/push-subscriptions', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+            });
+            setBrowserSubscription(subscription);
+            const response = await updateReminderPreference(reminder, { enabled: true });
+            setReminder(response.data);
             setNotice('Browser notifications are enabled.');
         } catch (error) {
-            setReminderErrors({ enabled: [error instanceof Error ? error.message : 'Browser notifications could not be enabled.'] });
+            getCurrentBrowserPushSubscription()
+                .then((subscription) => setBrowserSubscription(subscription))
+                .catch(() => undefined);
+            setReminderErrors({ enabled: [browserPushErrorMessage(error, 'Browser notifications could not be enabled. Please try again.')] });
+        } finally {
             setReminderWorking(false);
         }
     };
 
     const disableBrowserPush = async () => {
-        if (!reminder) return;
+        if (!reminder || !browserSubscription) return;
 
         setReminderWorking(true); setReminderErrors({}); setNotice('');
 
         try {
-            const registration = browserPushAvailable ? await navigator.serviceWorker.getRegistration('/service-worker.js') : undefined;
-            const subscription = await registration?.pushManager.getSubscription();
-
-            if (subscription) {
-                await apiRequest('/api/v1/push-subscriptions', { method: 'DELETE', body: JSON.stringify({ endpoint: subscription.endpoint }) });
-                await subscription.unsubscribe();
-            }
-
-            await saveReminder(undefined, { enabled: false, subscription_count: 0 });
+            await unsubscribeBrowserPush(browserSubscription, async (endpoint) => {
+                await apiRequest('/api/v1/push-subscriptions', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ endpoint }),
+                });
+            });
+            setBrowserSubscription(null);
+            const response = await updateReminderPreference(reminder, { enabled: false });
+            setReminder(response.data);
             setNotice('Devotional reminders and this browser’s notifications are disabled.');
-        } catch {
-            setReminderErrors({ enabled: ['Browser notifications could not be disabled. Please try again.'] });
+        } catch (error) {
+            getCurrentBrowserPushSubscription()
+                .then((subscription) => setBrowserSubscription(subscription))
+                .catch(() => undefined);
+            setReminderErrors({ enabled: [browserPushErrorMessage(error, 'Browser notifications could not be disabled. Please try again.')] });
+        } finally {
             setReminderWorking(false);
         }
     };
@@ -128,7 +163,7 @@ export function SettingsPage() {
                     <label className="grid gap-2 text-sm font-semibold">Reminder time<input type="time" required value={reminder.reminder_time} onChange={(event) => setReminder({ ...reminder, reminder_time: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" />{reminderErrors.reminder_time?.[0] && <span className="text-xs text-red-700">{reminderErrors.reminder_time[0]}</span>}</label>
                     <label className="grid gap-2 text-sm font-semibold">Timezone<input list="luma-timezones" required value={reminder.timezone} onChange={(event) => setReminder({ ...reminder, timezone: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" /><datalist id="luma-timezones">{commonTimezones.map((timezone) => <option key={timezone} value={timezone} />)}</datalist>{reminderErrors.timezone?.[0] && <span className="text-xs text-red-700">{reminderErrors.timezone[0]}</span>}</label>
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
-                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{reminder.subscription_count > 0 ? <button type="button" disabled={reminderWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}</div>
+                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}</div>
                     {!browserPushAvailable && <p className="text-xs text-stone-500 sm:col-span-2">This browser does not expose the Web Push APIs Luma needs.</p>}
                     {browserPushAvailable && !reminder.push_supported && <p className="text-xs text-amber-800 sm:col-span-2">Web Push keys must be configured on the server before notifications can be enabled.</p>}
                     <p className="text-xs leading-5 text-stone-500 sm:col-span-2">Web Push works in supported desktop and mobile browsers over HTTPS. This does not enable native iOS app notifications.</p>
@@ -138,13 +173,26 @@ export function SettingsPage() {
     );
 }
 
-function base64UrlToUint8Array(value: string): Uint8Array<ArrayBuffer> {
-    const padding = '='.repeat((4 - value.length % 4) % 4);
-    const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const decoded = window.atob(base64);
-    const bytes = new Uint8Array(new ArrayBuffer(decoded.length));
+async function updateReminderPreference(
+    reminder: DevotionalReminderPreference,
+    overrides: Partial<DevotionalReminderPreference>,
+): Promise<ResourceResponse<DevotionalReminderPreference>> {
+    const values = { ...reminder, ...overrides };
 
-    for (let index = 0; index < decoded.length; index++) bytes[index] = decoded.charCodeAt(index);
+    return apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences', {
+        method: 'PUT',
+        body: JSON.stringify({
+            enabled: values.enabled,
+            reminder_time: values.reminder_time,
+            timezone: values.timezone,
+        }),
+    });
+}
 
-    return bytes;
+function browserPushErrorMessage(error: unknown, fallback = 'Browser notifications are unavailable. Please try again.'): string {
+    if (error instanceof BrowserPushError || error instanceof ApiError) {
+        return error.message;
+    }
+
+    return fallback;
 }

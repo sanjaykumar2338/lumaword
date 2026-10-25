@@ -16,6 +16,7 @@ class DevotionalReminderPreferenceControllerTest extends TestCase
         $this->getJson('/api/v1/devotional-reminder-preferences')->assertUnauthorized();
         $this->putJson('/api/v1/devotional-reminder-preferences', [])->assertUnauthorized();
         $this->postJson('/api/v1/push-subscriptions', [])->assertUnauthorized();
+        $this->deleteJson('/api/v1/push-subscriptions', [])->assertUnauthorized();
     }
 
     public function test_user_can_update_notification_preferences(): void
@@ -68,6 +69,23 @@ class DevotionalReminderPreferenceControllerTest extends TestCase
         $this->assertNotSame($payload['endpoint'], $subscription->getRawOriginal('endpoint'));
         $this->assertNotSame($payload['keys']['auth'], $subscription->getRawOriginal('auth_token'));
         $this->assertDatabaseCount('push_subscriptions', 1);
+    }
+
+    public function test_user_can_remove_their_browser_push_subscription(): void
+    {
+        $user = User::factory()->create();
+        $payload = $this->subscriptionPayload();
+        $subscription = PushSubscription::factory()->for($user)->create([
+            'endpoint_hash' => hash('sha256', $payload['endpoint']),
+            'endpoint' => $payload['endpoint'],
+        ]);
+
+        $this->actingAs($user)
+            ->deleteJson('/api/v1/push-subscriptions', ['endpoint' => $payload['endpoint']])
+            ->assertOk()
+            ->assertJsonPath('message', 'Browser notifications disabled.');
+
+        $this->assertModelMissing($subscription);
     }
 
     public function test_user_cannot_claim_or_delete_another_users_subscription(): void
