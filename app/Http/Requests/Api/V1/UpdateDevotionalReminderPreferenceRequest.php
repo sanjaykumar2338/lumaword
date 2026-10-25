@@ -25,7 +25,7 @@ class UpdateDevotionalReminderPreferenceRequest extends FormRequest
         return [
             'enabled' => ['required', 'boolean'],
             'reminder_time' => ['required', 'date_format:H:i'],
-            'timezone' => ['required', 'string', 'timezone'],
+            'timezone' => ['required', 'string', 'timezone:all'],
         ];
     }
 }

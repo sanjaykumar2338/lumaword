@@ -3,8 +3,10 @@ import { AppShell } from '../components/AppShell';
 import { FormField } from '../components/FormField';
 import { NotificationHelp } from '../components/NotificationHelp';
 import { TestNotificationControl, type TestNotificationStatus } from '../components/TestNotificationControl';
+import { TimezoneSelect } from '../components/TimezoneSelect';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
+import { isSupportedTimezone, resolveReminderTimezone } from '../lib/timezones';
 import {
     BrowserPushError,
     disableBrowserPush as unsubscribeBrowserPush,
@@ -13,8 +15,6 @@ import {
     isBrowserPushAvailable,
 } from '../lib/browserPush';
 import type { DevotionalReminderPreference, MessageResponse, ResourceResponse, User } from '../types';
-
-const commonTimezones = ['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Africa/Johannesburg', 'Asia/Kolkata', 'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland'];
 
 export function SettingsPage() {
     const { user, setUser } = useAuth();
@@ -35,7 +35,14 @@ export function SettingsPage() {
 
     useEffect(() => {
         apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences')
-            .then((response) => setReminder(response.data))
+            .then((response) => setReminder({
+                ...response.data,
+                timezone: resolveReminderTimezone(
+                    response.data.timezone_configured,
+                    response.data.timezone,
+                    response.data.timezone_options,
+                ),
+            }))
             .catch(() => setReminderErrors({ enabled: ['Reminder settings could not be loaded. Please refresh and try again.'] }))
             .finally(() => setReminderLoading(false));
     }, []);
@@ -86,6 +93,13 @@ export function SettingsPage() {
     const saveReminder = async (event?: FormEvent, overrides: Partial<DevotionalReminderPreference> = {}) => {
         event?.preventDefault();
         if (!reminder) return;
+
+        const values = { ...reminder, ...overrides };
+
+        if (!isSupportedTimezone(values.timezone, reminder.timezone_options)) {
+            setReminderErrors((errors) => ({ ...errors, timezone: ['Select a valid timezone from the list.'] }));
+            return;
+        }
 
         setReminderWorking(true); setReminderErrors({}); setNotice(''); setTestNotificationStatus(null);
 
@@ -196,7 +210,7 @@ export function SettingsPage() {
                 {reminderErrors.enabled?.[0] && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{reminderErrors.enabled[0]}</p>}
                 {reminderLoading ? <p className="mt-6 text-sm text-stone-500">Loading reminder settings…</p> : reminder && <form onSubmit={(event) => saveReminder(event)} className="mt-6 grid gap-5 sm:grid-cols-2">
                     <label className="grid gap-2 text-sm font-semibold">Reminder time<input type="time" required value={reminder.reminder_time} onChange={(event) => setReminder({ ...reminder, reminder_time: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" />{reminderErrors.reminder_time?.[0] && <span className="text-xs text-red-700">{reminderErrors.reminder_time[0]}</span>}</label>
-                    <label className="grid gap-2 text-sm font-semibold">Timezone<input list="luma-timezones" required value={reminder.timezone} onChange={(event) => setReminder({ ...reminder, timezone: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" /><datalist id="luma-timezones">{commonTimezones.map((timezone) => <option key={timezone} value={timezone} />)}</datalist>{reminderErrors.timezone?.[0] && <span className="text-xs text-red-700">{reminderErrors.timezone[0]}</span>}</label>
+                    <TimezoneSelect id="settings-timezone" label="Timezone" value={reminder.timezone} options={reminder.timezone_options} onChange={(timezone) => setReminder({ ...reminder, timezone })} error={reminderErrors.timezone?.[0]} />
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
                     <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking || testNotificationWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking || testNotificationWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}<TestNotificationControl active={browserSubscription !== null} disabled={reminderWorking} sending={testNotificationWorking} status={testNotificationStatus} onSend={sendTestNotification} /></div>
                     <div className="sm:col-span-2"><NotificationHelp /></div>

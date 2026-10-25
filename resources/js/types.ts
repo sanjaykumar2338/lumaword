@@ -153,10 +153,17 @@ export type DailyActivitySummary = {
     }>;
 };
 
+export type TimezoneOption = {
+    value: string;
+    label: string;
+};
+
 export type DevotionalReminderPreference = {
     enabled: boolean;
     reminder_time: string;
     timezone: string;
+    timezone_configured: boolean;
+    timezone_options: TimezoneOption[];
     push_supported: boolean;
     vapid_public_key: string | null;
     subscription_count: number;

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\DevotionalReminderPreference;
 use App\Models\PushSubscription;
 use App\Models\User;
+use DateTimeZone;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
@@ -31,7 +33,8 @@ class DevotionalReminderPreferenceControllerTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.enabled', true)
             ->assertJsonPath('data.reminder_time', '06:45')
-            ->assertJsonPath('data.timezone', 'Asia/Kolkata');
+            ->assertJsonPath('data.timezone', 'Asia/Kolkata')
+            ->assertJsonPath('data.timezone_configured', true);
 
         $this->assertDatabaseHas('devotional_reminder_preferences', [
             'user_id' => $user->id,
@@ -39,6 +42,39 @@ class DevotionalReminderPreferenceControllerTest extends TestCase
             'reminder_time' => '06:45',
             'timezone' => 'Asia/Kolkata',
         ]);
+    }
+
+    public function test_new_user_receives_all_supported_timezones_without_persisting_a_default(): void
+    {
+        $this->travelTo('2026-01-15 12:00:00 UTC');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v1/devotional-reminder-preferences')
+            ->assertOk()
+            ->assertJsonPath('data.timezone', 'UTC')
+            ->assertJsonPath('data.timezone_configured', false)
+            ->assertJsonFragment(['value' => 'Asia/Kolkata', 'label' => '(UTC+05:30) Asia/Kolkata'])
+            ->assertJsonFragment(['value' => 'America/New_York', 'label' => '(UTC-05:00) America/New_York'])
+            ->assertJsonFragment(['value' => 'Europe/London', 'label' => '(UTC+00:00) Europe/London']);
+
+        $this->assertCount(
+            count(DateTimeZone::listIdentifiers(DateTimeZone::ALL)),
+            $response->json('data.timezone_options'),
+        );
+        $this->assertDatabaseCount('devotional_reminder_preferences', 0);
+    }
+
+    public function test_saved_timezone_is_preserved_when_loading_settings(): void
+    {
+        $user = User::factory()->create();
+        DevotionalReminderPreference::factory()->for($user)->create(['timezone' => 'America/New_York']);
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/devotional-reminder-preferences')
+            ->assertOk()
+            ->assertJsonPath('data.timezone', 'America/New_York')
+            ->assertJsonPath('data.timezone_configured', true);
     }
 
     public function test_invalid_time_and_timezone_are_rejected(): void
