@@ -5,7 +5,7 @@ import {
     disableBrowserPush,
     enableBrowserPush,
     getCurrentBrowserPushSubscription,
-} from '../../storage/framework/testing/frontend/browserPush.js';
+} from '../../storage/framework/testing/frontend/lib/browserPush.js';
 
 const endpoint = 'https://push.example.test/subscriptions/browser-1';
 

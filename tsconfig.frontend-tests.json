@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "outDir": "storage/framework/testing/frontend",
+        "rootDir": "resources/js"
+    },
+    "include": [
+        "resources/js/components/NotificationHelp.tsx",
+        "resources/js/lib/browserPush.ts"
+    ]
+}

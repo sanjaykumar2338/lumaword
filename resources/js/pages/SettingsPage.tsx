@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { AppShell } from '../components/AppShell';
 import { FormField } from '../components/FormField';
+import { NotificationHelp } from '../components/NotificationHelp';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
 import {
@@ -164,6 +165,7 @@ export function SettingsPage() {
                     <label className="grid gap-2 text-sm font-semibold">Timezone<input list="luma-timezones" required value={reminder.timezone} onChange={(event) => setReminder({ ...reminder, timezone: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" /><datalist id="luma-timezones">{commonTimezones.map((timezone) => <option key={timezone} value={timezone} />)}</datalist>{reminderErrors.timezone?.[0] && <span className="text-xs text-red-700">{reminderErrors.timezone[0]}</span>}</label>
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
                     <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}</div>
+                    <div className="sm:col-span-2"><NotificationHelp /></div>
                     {!browserPushAvailable && <p className="text-xs text-stone-500 sm:col-span-2">This browser does not expose the Web Push APIs Luma needs.</p>}
                     {browserPushAvailable && !reminder.push_supported && <p className="text-xs text-amber-800 sm:col-span-2">Web Push keys must be configured on the server before notifications can be enabled.</p>}
                     <p className="text-xs leading-5 text-stone-500 sm:col-span-2">Web Push works in supported desktop and mobile browsers over HTTPS. This does not enable native iOS app notifications.</p>
