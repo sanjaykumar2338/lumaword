@@ -33,7 +33,7 @@ class DispatchDevotionalReminders extends Command
                 foreach ($preferences as $preference) {
                     $localNow = CarbonImmutable::now($preference->timezone);
 
-                    if (substr($preference->reminder_time, 0, 5) !== $localNow->format('H:i')) {
+                    if ($localNow->format('H:i') < substr($preference->reminder_time, 0, 5)) {
                         continue;
                     }
 
