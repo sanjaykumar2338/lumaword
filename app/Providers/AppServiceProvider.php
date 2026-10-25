@@ -72,6 +72,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('devotional-generation', fn (Request $request): Limit => Limit::perDay(
             (int) config('devotionals.daily_generation_per_user'),
         )->by((string) ($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('test-push-notification', fn (Request $request): Limit => Limit::perMinutes(10, 3)
+            ->by((string) ($request->user()?->id ?? $request->ip())));
     }
 
     private function authenticationKey(Request $request): string

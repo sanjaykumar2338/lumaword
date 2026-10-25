@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { AppShell } from '../components/AppShell';
 import { FormField } from '../components/FormField';
 import { NotificationHelp } from '../components/NotificationHelp';
+import { TestNotificationControl, type TestNotificationStatus } from '../components/TestNotificationControl';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
 import {
@@ -29,6 +30,8 @@ export function SettingsPage() {
     const browserPushAvailable = isBrowserPushAvailable();
     const [browserSubscription, setBrowserSubscription] = useState<PushSubscription | null>(null);
     const [browserSubscriptionLoading, setBrowserSubscriptionLoading] = useState(browserPushAvailable);
+    const [testNotificationWorking, setTestNotificationWorking] = useState(false);
+    const [testNotificationStatus, setTestNotificationStatus] = useState<TestNotificationStatus | null>(null);
 
     useEffect(() => {
         apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences')
@@ -84,7 +87,7 @@ export function SettingsPage() {
         event?.preventDefault();
         if (!reminder) return;
 
-        setReminderWorking(true); setReminderErrors({}); setNotice('');
+        setReminderWorking(true); setReminderErrors({}); setNotice(''); setTestNotificationStatus(null);
 
         try {
             const response = await updateReminderPreference(reminder, overrides);
@@ -99,7 +102,7 @@ export function SettingsPage() {
     const enableBrowserPush = async () => {
         if (!reminder || !browserPushAvailable || !reminder.vapid_public_key) return;
 
-        setReminderWorking(true); setReminderErrors({}); setNotice('');
+        setReminderWorking(true); setReminderErrors({}); setNotice(''); setTestNotificationStatus(null);
 
         try {
             const subscription = await subscribeBrowserPush(reminder.vapid_public_key, async (payload) => {
@@ -125,7 +128,7 @@ export function SettingsPage() {
     const disableBrowserPush = async () => {
         if (!reminder || !browserSubscription) return;
 
-        setReminderWorking(true); setReminderErrors({}); setNotice('');
+        setReminderWorking(true); setReminderErrors({}); setNotice(''); setTestNotificationStatus(null);
 
         try {
             await unsubscribeBrowserPush(browserSubscription, async (endpoint) => {
@@ -148,6 +151,37 @@ export function SettingsPage() {
         }
     };
 
+    const sendTestNotification = async () => {
+        if (!browserSubscription) return;
+
+        setTestNotificationWorking(true); setTestNotificationStatus(null);
+
+        try {
+            const response = await apiRequest<MessageResponse>('/api/v1/push-subscriptions/test', {
+                method: 'POST',
+                body: JSON.stringify({ endpoint: browserSubscription.endpoint }),
+            });
+            setTestNotificationStatus({ type: 'success', message: response.message });
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 410) {
+                try {
+                    await browserSubscription.unsubscribe();
+                } catch {
+                    // The server has already removed the expired subscription.
+                }
+
+                setBrowserSubscription(null);
+            }
+
+            setTestNotificationStatus({
+                type: 'error',
+                message: error instanceof ApiError ? error.message : 'The test notification could not be sent. Please try again.',
+            });
+        } finally {
+            setTestNotificationWorking(false);
+        }
+    };
+
     return (
         <AppShell>
             <header className="border-b border-black/10 pb-8"><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Account</p><h1 className="mt-2 text-4xl font-semibold tracking-[-0.055em] sm:text-5xl">Settings</h1><p className="mt-3 text-sm text-stone-600">Manage your account and devotional rhythm.</p></header>
@@ -164,7 +198,7 @@ export function SettingsPage() {
                     <label className="grid gap-2 text-sm font-semibold">Reminder time<input type="time" required value={reminder.reminder_time} onChange={(event) => setReminder({ ...reminder, reminder_time: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" />{reminderErrors.reminder_time?.[0] && <span className="text-xs text-red-700">{reminderErrors.reminder_time[0]}</span>}</label>
                     <label className="grid gap-2 text-sm font-semibold">Timezone<input list="luma-timezones" required value={reminder.timezone} onChange={(event) => setReminder({ ...reminder, timezone: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" /><datalist id="luma-timezones">{commonTimezones.map((timezone) => <option key={timezone} value={timezone} />)}</datalist>{reminderErrors.timezone?.[0] && <span className="text-xs text-red-700">{reminderErrors.timezone[0]}</span>}</label>
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
-                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}</div>
+                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking || testNotificationWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking || testNotificationWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}<TestNotificationControl active={browserSubscription !== null} disabled={reminderWorking} sending={testNotificationWorking} status={testNotificationStatus} onSend={sendTestNotification} /></div>
                     <div className="sm:col-span-2"><NotificationHelp /></div>
                     {!browserPushAvailable && <p className="text-xs text-stone-500 sm:col-span-2">This browser does not expose the Web Push APIs Luma needs.</p>}
                     {browserPushAvailable && !reminder.push_supported && <p className="text-xs text-amber-800 sm:col-span-2">Web Push keys must be configured on the server before notifications can be enabled.</p>}

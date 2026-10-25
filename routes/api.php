@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\SermonNotesController;
 use App\Http\Controllers\Api\V1\SermonProcessingController;
 use App\Http\Controllers\Api\V1\SermonStatusController;
 use App\Http\Controllers\Api\V1\SermonTranscriptController;
+use App\Http\Controllers\Api\V1\TestPushNotificationController;
 use App\Http\Controllers\Api\V1\UserReadingPlanController;
 use App\Http\Controllers\Api\V1\YoutubeConnectionController;
 use Illuminate\Support\Facades\Route;
@@ -67,6 +68,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('push-subscriptions.store');
         Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])
             ->name('push-subscriptions.destroy');
+        Route::post('/push-subscriptions/test', TestPushNotificationController::class)
+            ->middleware('throttle:test-push-notification')
+            ->name('push-subscriptions.test');
 
         Route::apiResource('reading-plans', ReadingPlanController::class)
             ->only(['index', 'show'])
