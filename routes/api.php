@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
+use App\Http\Controllers\Api\V1\BibleStudyController;
 use App\Http\Controllers\Api\V1\DailyActivityController;
 use App\Http\Controllers\Api\V1\DevotionalActivityController;
 use App\Http\Controllers\Api\V1\DevotionalController;
@@ -54,6 +55,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy'])->name('auth.logout');
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
+        Route::apiResource('bible-studies', BibleStudyController::class)
+            ->only(['index', 'store', 'show', 'update'])
+            ->middlewareFor('store', 'throttle:bible-study-generation');
         Route::get('/devotionals/today', [DevotionalController::class, 'today'])->name('devotionals.today');
         Route::post('/devotionals/activity', DevotionalActivityController::class)->name('devotionals.activity.store');
         Route::apiResource('devotionals', DevotionalController::class)->only(['index', 'store', 'show'])

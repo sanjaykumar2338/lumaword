@@ -9,6 +9,7 @@
         "resources/js/components/NotificationHelp.tsx",
         "resources/js/components/TestNotificationControl.tsx",
         "resources/js/components/TimezoneSelect.tsx",
+        "resources/js/components/BibleStudyView.tsx",
         "resources/js/lib/browserPush.ts",
         "resources/js/lib/timezones.ts"
     ]

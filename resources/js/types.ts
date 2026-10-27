@@ -102,6 +102,64 @@ export type ScriptureOption = {
     key: string;
     reference: string;
     translation: string;
+    book: string;
+    chapter: number;
+    verse_start: number;
+    verse_end: number;
+};
+
+export type BibleStudyDepth = 'quick_read' | 'go_deeper' | 'study_in_depth';
+
+export type BibleStudyContent = {
+    title: string;
+    overview: string;
+    passage_context: string;
+    book_introduction: {
+        authorship: string;
+        audience: string;
+        purpose: string;
+        major_themes: string[];
+        biblical_narrative: string;
+        scholarly_uncertainties: string[];
+    };
+    historical_context: Array<{ detail: string; certainty: 'established' | 'likely' | 'debated' }>;
+    word_studies: Array<{
+        term: string;
+        language: 'Hebrew' | 'Aramaic' | 'Greek';
+        transliteration: string;
+        pronunciation: string;
+        contextual_meaning: string;
+        possible_translations: string[];
+        translation_significance: string;
+        caution: string;
+    }>;
+    book_outline: Array<{ heading: string; range: string; summary: string; contains_passage: boolean }>;
+    literary_context: { genre: string; structure: string[]; observations: string[] };
+    themes: Array<{ theme: string; explanation: string }>;
+    cross_references: Array<{ reference: string; connection: string }>;
+    study_questions: string[];
+    application: {
+        practical_reflections: string[];
+        prayer_prompts: string[];
+        journaling_questions: string[];
+        group_discussion_topics: string[];
+    };
+};
+
+export type BibleStudy = {
+    id: number;
+    title: string;
+    scripture_key: string;
+    scripture_reference: string;
+    translation: string;
+    scripture_text: string;
+    depth: BibleStudyDepth;
+    depth_label: string;
+    content: BibleStudyContent;
+    personal_notes: string | null;
+    ai: { provider: string; model: string; prompt_version: string };
+    generated_at: string;
+    updated_at: string;
 };
 
 export type ReadingPlanDay = {

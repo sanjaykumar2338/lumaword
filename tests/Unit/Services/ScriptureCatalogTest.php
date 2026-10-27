@@ -23,4 +23,14 @@ class ScriptureCatalogTest extends TestCase
 
         (new ScriptureCatalog)->find('not-a-real-passage');
     }
+
+    public function test_options_include_book_chapter_and_verse_coordinates_for_selection(): void
+    {
+        $option = (new ScriptureCatalog)->options()->firstWhere('key', 'john-3-16-21');
+
+        $this->assertSame('John', $option['book']);
+        $this->assertSame(3, $option['chapter']);
+        $this->assertSame(16, $option['verse_start']);
+        $this->assertSame(21, $option['verse_end']);
+    }
 }

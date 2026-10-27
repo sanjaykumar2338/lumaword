@@ -9,6 +9,7 @@ const navItems = [
     { to: '/sermons', label: 'Sermon library', icon: 'S' },
     { to: '/devotionals', label: 'Devotionals', icon: 'D' },
     { to: '/reading-plans', label: 'Reading plans', icon: 'R' },
+    { to: '/bible-studies', label: 'Bible study', icon: 'B' },
     { to: '/settings', label: 'Account', icon: 'A' },
 ];
 
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <NavLink
                             key={item.to}
                             to={item.to}
-                            end={item.to === '/sermons' || item.to === '/devotionals' || item.to === '/reading-plans'}
+                            end={item.to === '/sermons' || item.to === '/devotionals' || item.to === '/reading-plans' || item.to === '/bible-studies'}
                             className={({ isActive }) => `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${isActive ? 'bg-acid text-ink' : 'text-stone-400 hover:bg-white/5 hover:text-white'}`}
                         >
                             <span className="grid size-6 place-items-center rounded-md border border-current/20 text-xs font-bold" aria-hidden="true">{item.icon}</span>

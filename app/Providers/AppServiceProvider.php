@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\BibleStudyGenerator;
 use App\Contracts\DevotionalGenerator;
 use App\Contracts\MediaTranscriber;
 use App\Contracts\SermonAnalyzer;
 use App\Contracts\SermonQuestionAnswerer;
 use App\Contracts\WebPushGateway;
 use App\Services\MinishlinkWebPushGateway;
+use App\Services\OpenAiBibleStudyGenerator;
 use App\Services\OpenAiDevotionalGenerator;
 use App\Services\OpenAiSermonQuestionAnswerer;
 use App\Services\OpenAiSermonService;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MediaTranscriber::class, OpenAiSermonService::class);
         $this->app->bind(SermonQuestionAnswerer::class, OpenAiSermonQuestionAnswerer::class);
         $this->app->bind(DevotionalGenerator::class, OpenAiDevotionalGenerator::class);
+        $this->app->bind(BibleStudyGenerator::class, OpenAiBibleStudyGenerator::class);
         $this->app->bind(WebPushGateway::class, MinishlinkWebPushGateway::class);
     }
 
@@ -71,6 +74,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('devotional-generation', fn (Request $request): Limit => Limit::perDay(
             (int) config('devotionals.daily_generation_per_user'),
+        )->by((string) ($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('bible-study-generation', fn (Request $request): Limit => Limit::perDay(
+            (int) config('bible_studies.daily_generation_per_user'),
         )->by((string) ($request->user()?->id ?? $request->ip())));
 
         RateLimiter::for('test-push-notification', fn (Request $request): Limit => Limit::perMinutes(10, 3)

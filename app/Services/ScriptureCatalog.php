@@ -19,20 +19,46 @@ class ScriptureCatalog
         return $passage;
     }
 
-    /** @return Collection<string, array{key: string, reference: string, translation: string}> */
+    /** @return Collection<string, array{key: string, reference: string, translation: string, book: string, chapter: int, verse_start: int, verse_end: int}> */
     public function options(): Collection
     {
         return collect(config('scripture.passages', []))
-            ->map(fn (array $passage, string $key): array => [
-                'key' => $key,
-                'reference' => $passage['reference'],
-                'translation' => $passage['translation'],
-            ]);
+            ->map(function (array $passage, string $key): array {
+                $metadata = $this->referenceMetadata($passage['reference']);
+
+                return [
+                    'key' => $key,
+                    'reference' => $passage['reference'],
+                    'translation' => $passage['translation'],
+                    ...$metadata,
+                ];
+            });
     }
 
     /** @return array<string, string> */
     public function source(): array
     {
         return config('scripture.source');
+    }
+
+    /** @return array{book: string, chapter: int, verse_start: int, verse_end: int} */
+    private function referenceMetadata(string $reference): array
+    {
+        $matched = preg_match(
+            '/^(?<book>(?:[1-3] )?[A-Za-z]+(?: [A-Za-z]+)*) (?<chapter>\d+):(?<start>\d+)(?:-(?<end>\d+))?$/',
+            $reference,
+            $matches,
+        );
+
+        if ($matched !== 1) {
+            throw new InvalidArgumentException("Scripture reference [{$reference}] cannot be used by the passage selector.");
+        }
+
+        return [
+            'book' => $matches['book'],
+            'chapter' => (int) $matches['chapter'],
+            'verse_start' => (int) $matches['start'],
+            'verse_end' => (int) (($matches['end'] ?? '') !== '' ? $matches['end'] : $matches['start']),
+        ];
     }
 }
