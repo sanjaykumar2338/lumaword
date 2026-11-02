@@ -4,6 +4,8 @@ import { FormField } from '../components/FormField';
 import { NotificationHelp } from '../components/NotificationHelp';
 import { TestNotificationControl, type TestNotificationStatus } from '../components/TestNotificationControl';
 import { TimezoneSelect } from '../components/TimezoneSelect';
+import { BillingOverview } from '../components/BillingOverview';
+import { BannerManager } from '../components/BannerManager';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
 import { isSupportedTimezone, resolveReminderTimezone } from '../lib/timezones';
@@ -204,6 +206,9 @@ export function SettingsPage() {
                 <section className="rounded-2xl border border-black/10 bg-paper p-6 sm:p-8"><h2 className="text-xl font-semibold">Profile</h2><p className="mt-2 text-sm text-stone-600">Your name and sign-in email.</p><form onSubmit={updateProfile} className="mt-7 grid gap-5"><FormField id="settings-name" label="Name" value={profile.name} onChange={(event) => setProfile((value) => ({ ...value, name: event.target.value }))} error={profileErrors.name?.[0]} required /><FormField id="settings-email" label="Email address" type="email" value={profile.email} onChange={(event) => setProfile((value) => ({ ...value, email: event.target.value }))} error={profileErrors.email?.[0]} required /><button className="h-11 justify-self-start rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss">Save profile</button></form></section>
                 <section className="rounded-2xl border border-black/10 bg-paper p-6 sm:p-8"><h2 className="text-xl font-semibold">Password</h2><p className="mt-2 text-sm text-stone-600">Confirm your current password before choosing a new one.</p><form onSubmit={updatePassword} className="mt-7 grid gap-5"><FormField id="current-password" label="Current password" type="password" autoComplete="current-password" value={passwords.current_password} onChange={(event) => setPasswords((value) => ({ ...value, current_password: event.target.value }))} error={passwordErrors.current_password?.[0]} required /><FormField id="new-password" label="New password" type="password" autoComplete="new-password" value={passwords.password} onChange={(event) => setPasswords((value) => ({ ...value, password: event.target.value }))} error={passwordErrors.password?.[0]} required /><FormField id="confirm-password" label="Confirm new password" type="password" autoComplete="new-password" value={passwords.password_confirmation} onChange={(event) => setPasswords((value) => ({ ...value, password_confirmation: event.target.value }))} required /><button className="h-11 justify-self-start rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss">Update password</button></form></section>
             </div>
+
+            <section className="mt-6 rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8" aria-labelledby="membership-title"><div id="membership-title"><BillingOverview compact /></div></section>
+            {user?.is_admin && <BannerManager />}
 
             <section className="mt-6 rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8" aria-labelledby="reminders-title">
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Devotional rhythm</p><h2 id="reminders-title" className="mt-2 text-2xl font-semibold">Daily reminders</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">Receive one respectful reminder at your local time if you have not completed a devotional that day. Browser permission is requested only when you choose to enable it.</p>

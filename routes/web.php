@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Api\V1\YoutubeConnectionController;
 use App\Http\Controllers\Api\V1\YoutubeOAuthCallbackController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'app')->name('home');
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])->name('cashier.webhook');
 
 Route::middleware('guest')->group(function (): void {
     Route::view('/login', 'app')->name('login');
@@ -26,6 +28,7 @@ Route::middleware('auth')->group(function (): void {
     Route::view('/sermons/new', 'app')->name('sermons.create');
     Route::view('/sermons/{sermon}', 'app')->whereNumber('sermon')->name('sermons.show');
     Route::view('/settings', 'app')->name('settings');
+    Route::view('/pricing', 'app')->name('pricing');
 });
 
 Route::view('/{path?}', 'app')

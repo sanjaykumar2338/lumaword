@@ -2,6 +2,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
+    is_admin: boolean;
     created_at: string;
 };
 
@@ -13,6 +14,23 @@ export type ResourceResponse<T> = {
 export type MessageResponse = {
     message: string;
 };
+
+export type Membership = {
+    plan: 'free' | 'premium';
+    status: string;
+    renews_or_ends_at: string | null;
+    on_grace_period: boolean;
+    billing_enabled: boolean;
+};
+
+export type UsageSummary = {
+    plan: 'free' | 'premium';
+    period_start: string;
+    resets_at: string;
+    features: Record<string, { used: number; limit: number; remaining: number }>;
+};
+
+export type Entitlements = { membership: Membership; usage: UsageSummary };
 
 export type SermonProcessingStatus = 'submitted' | 'awaiting_transcript' | 'retrieving_transcript' | 'transcribing' | 'transcript_ready' | 'queued' | 'analyzing' | 'completed' | 'failed';
 

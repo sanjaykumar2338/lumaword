@@ -16,7 +16,7 @@ use Throwable;
 
 class AskSermonQuestion
 {
-    public function __construct(private readonly SermonQuestionAnswerer $answerer) {}
+    public function __construct(private readonly SermonQuestionAnswerer $answerer, private readonly AiUsageService $usage) {}
 
     /** @return array{conversation: SermonConversation, question: SermonMessage, answer: SermonMessage} */
     public function handle(User $user, Sermon $sermon, string $question, string $requestId): array
@@ -90,9 +90,12 @@ class AskSermonQuestion
             ->values()
             ->map(fn (SermonMessage $message): array => ['role' => $message->role, 'content' => $message->content]);
 
+        $reservation = $this->usage->reserve($user, 'ask_luma', $requestId);
+
         try {
             $result = $this->answerer->answer($sermon->loadMissing('notes'), $question, $recentMessages, $requestId);
         } catch (Throwable $exception) {
+            $this->usage->release($reservation);
             $userMessage->update(['status' => SermonMessage::STATUS_FAILED]);
             report($exception);
 
@@ -118,6 +121,8 @@ class AskSermonQuestion
 
             return $assistantMessage;
         });
+
+        $this->usage->complete($reservation, (array) ($result['usage'] ?? []));
 
         return ['conversation' => $conversation, 'question' => $userMessage, 'answer' => $assistantMessage];
     }

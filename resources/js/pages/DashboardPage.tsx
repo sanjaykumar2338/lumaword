@@ -4,6 +4,7 @@ import { AppShell } from '../components/AppShell';
 import { DevotionalView } from '../components/DevotionalView';
 import { SermonStatusBadge } from '../components/SermonStatusBadge';
 import { SermonSubmissionForm } from '../components/SermonSubmissionForm';
+import { PromotionalBanners } from '../components/PromotionalBanners';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import type { DailyActivitySummary, Devotional, PaginatedResponse, ResourceResponse, Sermon, UserReadingPlan } from '../types';
@@ -41,6 +42,7 @@ export function DashboardPage() {
                 <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Luma</p><h1 className="mt-2 text-4xl font-semibold tracking-[-0.055em] sm:text-5xl">Welcome, {user?.name.split(' ')[0] ?? 'friend'}.</h1></div>
                 <Link to="/sermons" className="text-sm font-semibold text-moss hover:underline">Open sermon library</Link>
             </header>
+            <PromotionalBanners placement="dashboard" />
 
             <section className="mt-8">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Today with God</p><h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">Keep your study rhythm.</h2></div><div className="flex gap-4 text-sm font-semibold text-moss"><Link to="/devotionals" className="hover:underline">All devotionals</Link><Link to="/reading-plans" className="hover:underline">Reading plans</Link></div></div>

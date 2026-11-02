@@ -8,6 +8,7 @@ use App\Jobs\ProcessSermon;
 use App\Models\Sermon;
 use App\SermonProcessingStatus;
 use App\SermonSourceType;
+use App\Services\AiUsageService;
 use App\TranscriptSource;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,7 @@ class ProcessSermonTest extends TestCase
         $transcriber = $this->mock(MediaTranscriber::class);
         $transcriber->shouldNotReceive('transcribe');
 
-        (new ProcessSermon($sermon->id))->handle($analyzer, $transcriber);
+        (new ProcessSermon($sermon->id))->handle($analyzer, $transcriber, app(AiUsageService::class));
 
         $sermon->refresh();
         $this->assertSame(SermonProcessingStatus::Completed, $sermon->processing_status);
@@ -57,7 +58,7 @@ class ProcessSermonTest extends TestCase
         $analyzer = $this->mock(SermonAnalyzer::class);
         $analyzer->shouldReceive('analyze')->once()->andReturn($this->analysisResult());
 
-        (new ProcessSermon($sermon->id))->handle($analyzer, $transcriber);
+        (new ProcessSermon($sermon->id))->handle($analyzer, $transcriber, app(AiUsageService::class));
 
         $sermon->refresh();
         $this->assertSame($transcript, $sermon->transcript);

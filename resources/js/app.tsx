@@ -15,6 +15,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ReadingPlansPage } from './pages/ReadingPlansPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PricingPage } from './pages/PricingPage';
 import { NewSermonPage } from './pages/NewSermonPage';
 import { SermonDetailPage } from './pages/SermonDetailPage';
 import { SermonLibraryPage } from './pages/SermonLibraryPage';
@@ -62,6 +63,7 @@ function App() {
             <Route path="/bible-studies/:studyId" element={<ProtectedRoute><BibleStudyDetailPage /></ProtectedRoute>} />
             <Route path="/bible-studies" element={<ProtectedRoute><BibleStudiesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

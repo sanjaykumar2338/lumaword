@@ -7,12 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDevotionalRequest;
 use App\Http\Resources\V1\DevotionalResource;
 use App\Models\Devotional;
+use App\Services\AiUsageService;
 use App\Services\DailyDevotional;
 use App\Services\ScriptureCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Throwable;
 
 class DevotionalController extends Controller
 {
@@ -37,6 +40,7 @@ class DevotionalController extends Controller
         StoreDevotionalRequest $request,
         ScriptureCatalog $scriptures,
         DevotionalGenerator $generator,
+        AiUsageService $usage,
     ): JsonResponse {
         Gate::authorize('create', Devotional::class);
         $scriptureKey = $request->validated('scripture_key');
@@ -45,7 +49,15 @@ class DevotionalController extends Controller
         $sermon = $sermonId === null
             ? null
             : $request->user()->sermons()->findOrFail($sermonId);
-        $generated = $generator->generate($scripture, $sermon);
+        $idempotencyKey = $request->header('Idempotency-Key') ?: (string) Str::uuid();
+        $reservation = $usage->reserve($request->user(), 'devotional', $idempotencyKey);
+
+        try {
+            $generated = $generator->generate($scripture, $sermon);
+        } catch (Throwable $exception) {
+            $usage->release($reservation);
+            throw $exception;
+        }
 
         $devotional = $request->user()->devotionals()->create([
             'sermon_id' => $sermon?->id,
@@ -63,6 +75,7 @@ class DevotionalController extends Controller
             'prompt_version' => $generated['prompt_version'],
             'generated_at' => now(),
         ]);
+        $usage->complete($reservation, (array) ($generated['usage'] ?? []));
 
         return (new DevotionalResource($devotional))->response()->setStatusCode(201);
     }

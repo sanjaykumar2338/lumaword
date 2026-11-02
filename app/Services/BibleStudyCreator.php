@@ -14,6 +14,7 @@ class BibleStudyCreator
     public function __construct(
         private readonly ScriptureCatalog $scriptures,
         private readonly BibleStudyGenerator $generator,
+        private readonly AiUsageService $usage,
     ) {}
 
     /** @return array{study: BibleStudy, reused: bool} */
@@ -49,8 +50,15 @@ class BibleStudyCreator
                 return ['study' => $existing, 'reused' => true];
             }
 
+            $reservation = $this->usage->reserve($user, 'bible_study', $requestHash);
             $scripture = $this->scriptures->find($scriptureKey);
-            $generated = $this->generator->generate($scripture, $depth);
+
+            try {
+                $generated = $this->generator->generate($scripture, $depth);
+            } catch (\Throwable $exception) {
+                $this->usage->release($reservation);
+                throw $exception;
+            }
             $content = $generated['content'];
 
             $study = $user->bibleStudies()->create([
@@ -68,6 +76,7 @@ class BibleStudyCreator
                 'request_hash' => $requestHash,
                 'generated_at' => now(),
             ]);
+            $this->usage->complete($reservation, (array) ($generated['usage'] ?? []));
 
             return ['study' => $study, 'reused' => false];
         } finally {

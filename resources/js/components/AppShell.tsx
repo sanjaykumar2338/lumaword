@@ -10,6 +10,7 @@ const navItems = [
     { to: '/devotionals', label: 'Devotionals', icon: 'D' },
     { to: '/reading-plans', label: 'Reading plans', icon: 'R' },
     { to: '/bible-studies', label: 'Bible study', icon: 'B' },
+    { to: '/pricing', label: 'Membership', icon: '$' },
     { to: '/settings', label: 'Account', icon: 'A' },
 ];
 

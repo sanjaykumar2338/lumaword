@@ -4,8 +4,10 @@ namespace App\Jobs;
 
 use App\Contracts\MediaTranscriber;
 use App\Contracts\SermonAnalyzer;
+use App\Models\AiUsageReservation;
 use App\Models\Sermon;
 use App\SermonProcessingStatus;
+use App\Services\AiUsageService;
 use App\TranscriptSource;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,7 +32,7 @@ class ProcessSermon implements ShouldBeUnique, ShouldQueue
     /** @var array<int, int> */
     public array $backoff = [30, 120, 300];
 
-    public function __construct(public readonly int $sermonId)
+    public function __construct(public readonly int $sermonId, public readonly ?int $usageReservationId = null)
     {
         $this->timeout = (int) config('sermons.processing.timeout_seconds');
         $this->uniqueFor = (int) config('sermons.processing.lock_seconds');
@@ -41,10 +43,10 @@ class ProcessSermon implements ShouldBeUnique, ShouldQueue
         return (string) $this->sermonId;
     }
 
-    public function handle(SermonAnalyzer $analyzer, MediaTranscriber $transcriber): void
+    public function handle(SermonAnalyzer $analyzer, MediaTranscriber $transcriber, AiUsageService $usage): void
     {
         Cache::lock('sermon-processing:'.$this->sermonId, (int) config('sermons.processing.lock_seconds'))
-            ->block(5, function () use ($analyzer, $transcriber): void {
+            ->block(5, function () use ($analyzer, $transcriber, $usage): void {
                 $sermon = Sermon::query()->findOrFail($this->sermonId);
 
                 if ($sermon->processing_status === SermonProcessingStatus::Completed) {
@@ -92,6 +94,11 @@ class ProcessSermon implements ShouldBeUnique, ShouldQueue
                         'processed_at' => now(),
                     ]);
                 });
+
+                $reservation = $this->usageReservationId === null ? null : AiUsageReservation::query()->find($this->usageReservationId);
+                if ($reservation !== null) {
+                    $usage->complete($reservation, (array) ($result['usage'] ?? []));
+                }
             });
     }
 
@@ -107,6 +114,11 @@ class ProcessSermon implements ShouldBeUnique, ShouldQueue
             'processing_status' => SermonProcessingStatus::Failed,
             'processing_error' => 'Processing could not be completed. You can safely retry.',
         ]);
+
+        $reservation = $this->usageReservationId === null ? null : AiUsageReservation::query()->find($this->usageReservationId);
+        if ($reservation !== null) {
+            app(AiUsageService::class)->release($reservation);
+        }
 
         Log::error('Sermon processing failed.', [
             'sermon_id' => $this->sermonId,

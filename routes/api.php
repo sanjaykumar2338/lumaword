@@ -7,12 +7,15 @@ use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
 use App\Http\Controllers\Api\V1\BibleStudyController;
+use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\DailyActivityController;
 use App\Http\Controllers\Api\V1\DevotionalActivityController;
 use App\Http\Controllers\Api\V1\DevotionalController;
 use App\Http\Controllers\Api\V1\DevotionalReminderPreferenceController;
+use App\Http\Controllers\Api\V1\EntitlementController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\PromotionalBannerController;
 use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use App\Http\Controllers\Api\V1\ReadingPlanController;
 use App\Http\Controllers\Api\V1\ReadingPlanProgressController;
@@ -53,6 +56,14 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
         Route::put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');
         Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy'])->name('auth.logout');
+        Route::get('/entitlements', EntitlementController::class)->name('entitlements.show');
+        Route::get('/billing', [BillingController::class, 'show'])->name('billing.show');
+        Route::post('/billing/checkout', [BillingController::class, 'checkout'])->middleware('throttle:billing')->name('billing.checkout');
+        Route::post('/billing/portal', [BillingController::class, 'portal'])->middleware('throttle:billing')->name('billing.portal');
+        Route::get('/promotional-banners', [PromotionalBannerController::class, 'index'])->name('promotional-banners.index');
+        Route::get('/admin/promotional-banners', [PromotionalBannerController::class, 'adminIndex'])->name('admin.promotional-banners.index');
+        Route::apiResource('admin/promotional-banners', PromotionalBannerController::class)
+            ->except(['index'])->parameters(['promotional-banners' => 'promotionalBanner']);
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
         Route::apiResource('bible-studies', BibleStudyController::class)

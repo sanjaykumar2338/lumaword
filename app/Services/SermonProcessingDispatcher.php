@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class SermonProcessingDispatcher
 {
+    public function __construct(private readonly AiUsageService $usage) {}
+
     public function dispatch(Sermon $sermon, User $user): bool
     {
         $startedToday = $user->sermons()
@@ -24,7 +26,7 @@ class SermonProcessingDispatcher
             ]);
         }
 
-        return DB::transaction(function () use ($sermon): bool {
+        return DB::transaction(function () use ($sermon, $user): bool {
             $lockedSermon = Sermon::query()->lockForUpdate()->findOrFail($sermon->id);
 
             if ($lockedSermon->processing_status->isActive()) {
@@ -37,6 +39,13 @@ class SermonProcessingDispatcher
                 ]);
             }
 
+            $fingerprint = hash('sha256', implode('|', [
+                (string) $lockedSermon->transcript,
+                (string) $lockedSermon->media_path,
+                (string) config('sermons.processing.prompt_version'),
+            ]));
+            $reservation = $this->usage->reserve($user, 'sermon_processing', "sermon:{$lockedSermon->id}:{$fingerprint}");
+
             $lockedSermon->update([
                 'processing_status' => SermonProcessingStatus::Queued,
                 'processing_error' => null,
@@ -44,7 +53,7 @@ class SermonProcessingDispatcher
                 'processed_at' => null,
             ]);
 
-            ProcessSermon::dispatch($lockedSermon->id)->afterCommit();
+            ProcessSermon::dispatch($lockedSermon->id, $reservation->id)->afterCommit();
 
             return true;
         });

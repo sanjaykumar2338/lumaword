@@ -8,6 +8,7 @@ use App\Contracts\MediaTranscriber;
 use App\Contracts\SermonAnalyzer;
 use App\Contracts\SermonQuestionAnswerer;
 use App\Contracts\WebPushGateway;
+use App\Models\User;
 use App\Services\MinishlinkWebPushGateway;
 use App\Services\OpenAiBibleStudyGenerator;
 use App\Services\OpenAiDevotionalGenerator;
@@ -19,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        Cashier::ignoreRoutes();
         $this->app->singleton(OpenAiSermonService::class);
         $this->app->bind(SermonAnalyzer::class, OpenAiSermonService::class);
         $this->app->bind(MediaTranscriber::class, OpenAiSermonService::class);
@@ -41,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Cashier::useCustomerModel(User::class);
         Model::preventLazyLoading(! $this->app->isProduction());
 
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)
@@ -81,6 +85,9 @@ class AppServiceProvider extends ServiceProvider
         )->by((string) ($request->user()?->id ?? $request->ip())));
 
         RateLimiter::for('test-push-notification', fn (Request $request): Limit => Limit::perMinutes(10, 3)
+            ->by((string) ($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('billing', fn (Request $request): Limit => Limit::perMinute(10)
             ->by((string) ($request->user()?->id ?? $request->ip())));
     }
 
