@@ -92,6 +92,9 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('billing', fn (Request $request): Limit => Limit::perMinute(10)
             ->by((string) ($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('beta-feedback', fn (Request $request): Limit => Limit::perMinutes(10, 5)
+            ->by((string) ($request->user()?->id ?? $request->ip())));
     }
 
     private function authenticationKey(Request $request): string

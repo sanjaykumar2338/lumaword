@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AppShell } from '../components/AppShell';
 import { BannerManager } from '../components/BannerManager';
+import { BetaFeedbackManager } from '../components/BetaFeedbackManager';
 import { apiRequest } from '../lib/api';
 import { chartPercent, formatAdminFeature, formatMicrosAsUsd } from '../lib/admin';
 import type { AdminDashboard, AdminSeriesPoint, AdminUser, AdminUserDetail, PaginatedResponse, ResourceResponse } from '../types';
@@ -146,6 +147,7 @@ export function AdminDashboardPage() {
             </section>
 
             <BannerManager />
+            <BetaFeedbackManager />
         </AppShell>
     );
 }

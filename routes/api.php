@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\BetaFeedbackController as AdminBetaFeedbackController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthenticatedSessionController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
+use App\Http\Controllers\Api\V1\BetaFeedbackController;
 use App\Http\Controllers\Api\V1\BibleStudyController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\DailyActivityController;
@@ -65,6 +67,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/promotional-banners', [PromotionalBannerController::class, 'index'])->name('promotional-banners.index');
         Route::prefix('admin')->name('admin.')->middleware('can:view-admin')->group(function (): void {
             Route::get('/dashboard', AdminDashboardController::class)->name('dashboard.show');
+            Route::get('/beta-feedback', [AdminBetaFeedbackController::class, 'index'])->name('beta-feedback.index');
             Route::apiResource('users', AdminUserController::class)->only(['index', 'show']);
             Route::get('/promotional-banners', [PromotionalBannerController::class, 'adminIndex'])->name('promotional-banners.index');
             Route::apiResource('promotional-banners', PromotionalBannerController::class)
@@ -72,6 +75,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         });
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
+        Route::post('/beta-feedback', [BetaFeedbackController::class, 'store'])
+            ->middleware('throttle:beta-feedback')
+            ->name('beta-feedback.store');
         Route::apiResource('bible-studies', BibleStudyController::class)
             ->only(['index', 'store', 'show', 'update'])
             ->middlewareFor('store', 'throttle:bible-study-generation');

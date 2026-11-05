@@ -20,6 +20,7 @@ import { NewSermonPage } from './pages/NewSermonPage';
 import { SermonDetailPage } from './pages/SermonDetailPage';
 import { SermonLibraryPage } from './pages/SermonLibraryPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { BetaFeedbackPage } from './pages/BetaFeedbackPage';
 
 declare global {
     interface Window {
@@ -73,6 +74,7 @@ function App() {
             <Route path="/bible-studies" element={<ProtectedRoute><BibleStudiesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+            <Route path="/feedback" element={<ProtectedRoute><BetaFeedbackPage /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>

@@ -6,10 +6,10 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-    --color-ink: #11130f;
-    --color-paper: #f5f3eb;
-    --color-acid: #c8ff3d;
-    --color-moss: #20330f;
+    --color-ink: #171717;
+    --color-paper: #f5f1e8;
+    --color-acid: #c8f500;
+    --color-moss: #304600;
 }
 
 @layer base {
@@ -31,8 +31,8 @@
     }
 
     ::selection {
-        background: #c8ff3d;
-        color: #11130f;
+        background: #c8f500;
+        color: #171717;
     }
 }
 

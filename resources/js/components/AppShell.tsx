@@ -12,6 +12,7 @@ const navItems = [
     { to: '/bible-studies', label: 'Bible study', icon: 'B' },
     { to: '/pricing', label: 'Membership', icon: '$' },
     { to: '/settings', label: 'Account', icon: 'A' },
+    { to: '/feedback', label: 'Beta feedback', icon: '?' },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

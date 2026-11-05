@@ -90,4 +90,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(AiUsageReservation::class);
     }
+
+    public function betaFeedback(): HasMany
+    {
+        return $this->hasMany(BetaFeedback::class);
+    }
 }
