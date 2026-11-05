@@ -32,6 +32,69 @@ export type UsageSummary = {
 
 export type Entitlements = { membership: Membership; usage: UsageSummary };
 
+export type AdminSeriesPoint = { date: string; count: number };
+
+export type AdminUser = {
+    id: number;
+    name: string;
+    email: string;
+    is_admin: boolean;
+    created_at: string;
+    membership: 'free' | 'premium';
+    subscription_status: string;
+    subscription_ends_at: string | null;
+    last_activity_at: string | null;
+    usage: {
+        sermons: number;
+        bible_studies: number;
+        devotionals: number;
+        ai_requests: number;
+        ai_requests_this_month: number;
+        estimated_ai_cost_micros: number;
+    };
+};
+
+export type AdminUserDetail = AdminUser & {
+    subscriptions: Array<{
+        status: string;
+        stripe_id: string;
+        stripe_price: string | null;
+        trial_ends_at: string | null;
+        ends_at: string | null;
+        created_at: string;
+    }>;
+    usage_by_feature: Record<string, { requests: number; failed_requests: number; estimated_cost_micros: number }>;
+};
+
+export type AdminDashboard = {
+    generated_at: string;
+    metrics: Record<string, number>;
+    registrations: { last_7_days: AdminSeriesPoint[]; last_30_days: AdminSeriesPoint[] };
+    activity: { last_7_days: AdminSeriesPoint[]; last_30_days: AdminSeriesPoint[] };
+    subscriptions: {
+        counts: { active: number; trialing: number; past_due: number; canceled: number; free_users: number };
+        recent: Array<{
+            id: number;
+            user: { id: number; name: string; email: string };
+            status: string;
+            stripe_id: string;
+            stripe_price: string | null;
+            trial_ends_at: string | null;
+            ends_at: string | null;
+            created_at: string;
+        }>;
+    };
+    ai_usage: {
+        requests_today: number;
+        requests_this_month: number;
+        failed_requests_this_month: number;
+        estimated_cost_micros_this_month: number;
+        by_feature: Record<string, { requests: number; failed_requests: number; estimated_cost_micros: number }>;
+        quota_utilization: Record<string, { used: number; available: number; percent: number }>;
+        monthly_trends: Array<{ month: string; requests: number; failed_requests: number; estimated_cost_micros: number }>;
+    };
+};
+
 export type SermonProcessingStatus = 'submitted' | 'awaiting_transcript' | 'retrieving_transcript' | 'transcribing' | 'transcript_ready' | 'queued' | 'analyzing' | 'completed' | 'failed';
 
 export type YoutubeConnectionStatus = {

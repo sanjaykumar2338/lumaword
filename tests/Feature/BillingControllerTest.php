@@ -25,6 +25,36 @@ class BillingControllerTest extends TestCase
             ->assertServiceUnavailable()->assertJsonPath('message', 'Billing is not enabled yet.');
     }
 
+    public function test_checkout_rejects_unknown_billing_interval(): void
+    {
+        $this->actingAs(User::factory()->create())->postJson('/api/v1/billing/checkout', ['interval' => 'weekly'])
+            ->assertUnprocessable()->assertJsonValidationErrors('interval');
+    }
+
+    public function test_checkout_rejects_existing_active_premium_subscription(): void
+    {
+        config()->set('billing.enabled', true);
+        config()->set('billing.prices.monthly.stripe_id', 'price_monthly');
+        $user = User::factory()->create();
+        Subscription::query()->create([
+            'user_id' => $user->id,
+            'type' => 'premium',
+            'stripe_id' => 'sub_existing',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_monthly',
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->postJson('/api/v1/billing/checkout', ['interval' => 'monthly'])
+            ->assertConflict()->assertJsonPath('message', 'You already have an active Premium subscription.');
+    }
+
+    public function test_portal_requires_existing_stripe_customer(): void
+    {
+        $this->actingAs(User::factory()->create())->postJson('/api/v1/billing/portal')
+            ->assertConflict()->assertJsonPath('message', 'No billing account is available for this user.');
+    }
+
     public function test_new_and_existing_users_receive_effective_free_membership(): void
     {
         $user = User::factory()->create();

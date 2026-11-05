@@ -19,6 +19,7 @@ import { PricingPage } from './pages/PricingPage';
 import { NewSermonPage } from './pages/NewSermonPage';
 import { SermonDetailPage } from './pages/SermonDetailPage';
 import { SermonLibraryPage } from './pages/SermonLibraryPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 
 declare global {
     interface Window {
@@ -46,6 +47,14 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
     return user ? <Navigate to="/dashboard" replace /> : children;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+    const { user, isLoading } = useAuth();
+
+    if (isLoading) return <LoadingScreen />;
+
+    return user?.is_admin ? children : <Navigate to="/dashboard" replace />;
+}
+
 function App() {
     return (
         <Routes>
@@ -64,6 +73,7 @@ function App() {
             <Route path="/bible-studies" element={<ProtectedRoute><BibleStudiesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

@@ -22,4 +22,11 @@ class DashboardAccessTest extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertOk()->assertViewIs('app');
         $this->actingAs($user)->get('/settings')->assertOk()->assertViewIs('app');
     }
+
+    public function test_administrator_can_open_admin_dashboard(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)->get('/admin')->assertOk()->assertViewIs('app');
+    }
 }

@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function (): void {
     Route::view('/sermons/{sermon}', 'app')->whereNumber('sermon')->name('sermons.show');
     Route::view('/settings', 'app')->name('settings');
     Route::view('/pricing', 'app')->name('pricing');
+    Route::view('/admin', 'app')->middleware('can:view-admin')->name('admin.dashboard');
 });
 
 Route::view('/{path?}', 'app')

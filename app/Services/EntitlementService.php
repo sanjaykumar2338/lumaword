@@ -36,7 +36,7 @@ class EntitlementService
         return [
             'plan' => $this->plan($user),
             'status' => $subscription?->stripe_status ?? 'free',
-            'renews_or_ends_at' => $subscription?->ends_at?->toISOString(),
+            'renews_or_ends_at' => ($subscription?->trial_ends_at ?? $subscription?->ends_at)?->toISOString(),
             'on_grace_period' => $subscription?->onGracePeriod() ?? false,
             'billing_enabled' => (bool) config('billing.enabled'),
         ];

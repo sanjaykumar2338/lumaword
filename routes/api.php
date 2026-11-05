@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Api\V1\Auth\AuthenticationStatusController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
@@ -61,9 +63,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/billing/checkout', [BillingController::class, 'checkout'])->middleware('throttle:billing')->name('billing.checkout');
         Route::post('/billing/portal', [BillingController::class, 'portal'])->middleware('throttle:billing')->name('billing.portal');
         Route::get('/promotional-banners', [PromotionalBannerController::class, 'index'])->name('promotional-banners.index');
-        Route::get('/admin/promotional-banners', [PromotionalBannerController::class, 'adminIndex'])->name('admin.promotional-banners.index');
-        Route::apiResource('admin/promotional-banners', PromotionalBannerController::class)
-            ->except(['index'])->parameters(['promotional-banners' => 'promotionalBanner']);
+        Route::prefix('admin')->name('admin.')->middleware('can:view-admin')->group(function (): void {
+            Route::get('/dashboard', AdminDashboardController::class)->name('dashboard.show');
+            Route::apiResource('users', AdminUserController::class)->only(['index', 'show']);
+            Route::get('/promotional-banners', [PromotionalBannerController::class, 'adminIndex'])->name('promotional-banners.index');
+            Route::apiResource('promotional-banners', PromotionalBannerController::class)
+                ->except(['index'])->parameters(['promotional-banners' => 'promotionalBanner']);
+        });
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
         Route::apiResource('bible-studies', BibleStudyController::class)

@@ -32,6 +32,24 @@ class PromotionalBannerControllerTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('destination_url');
     }
 
+    public function test_admin_can_update_preview_fields_and_remove_banner(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $banner = PromotionalBanner::query()->create($this->validPayload());
+
+        $this->actingAs($admin)->patchJson("/api/v1/admin/promotional-banners/{$banner->id}", [
+            'title' => 'Updated promotion',
+            'image_url' => 'https://example.com/banner.jpg',
+            'image_alt' => 'Luma store collection',
+            'is_enabled' => true,
+        ])->assertOk()->assertJsonPath('data.title', 'Updated promotion')->assertJsonPath('data.is_enabled', true);
+
+        $this->assertDatabaseHas('promotional_banners', ['id' => $banner->id, 'is_enabled' => true]);
+
+        $this->actingAs($admin)->deleteJson("/api/v1/admin/promotional-banners/{$banner->id}")->assertNoContent();
+        $this->assertModelMissing($banner);
+    }
+
     public function test_free_user_sees_only_active_banner(): void
     {
         PromotionalBanner::query()->create([...$this->validPayload(), 'is_enabled' => true]);

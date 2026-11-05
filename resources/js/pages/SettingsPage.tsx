@@ -5,7 +5,6 @@ import { NotificationHelp } from '../components/NotificationHelp';
 import { TestNotificationControl, type TestNotificationStatus } from '../components/TestNotificationControl';
 import { TimezoneSelect } from '../components/TimezoneSelect';
 import { BillingOverview } from '../components/BillingOverview';
-import { BannerManager } from '../components/BannerManager';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, apiRequest } from '../lib/api';
 import { isSupportedTimezone, resolveReminderTimezone } from '../lib/timezones';
@@ -208,8 +207,6 @@ export function SettingsPage() {
             </div>
 
             <section className="mt-6 rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8" aria-labelledby="membership-title"><div id="membership-title"><BillingOverview compact /></div></section>
-            {user?.is_admin && <BannerManager />}
-
             <section className="mt-6 rounded-[1.75rem] border border-black/10 bg-paper p-6 sm:p-8" aria-labelledby="reminders-title">
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-moss">Devotional rhythm</p><h2 id="reminders-title" className="mt-2 text-2xl font-semibold">Daily reminders</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">Receive one respectful reminder at your local time if you have not completed a devotional that day. Browser permission is requested only when you choose to enable it.</p>
                 {reminderErrors.enabled?.[0] && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{reminderErrors.enabled[0]}</p>}

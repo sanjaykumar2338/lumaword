@@ -17,6 +17,9 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const { user, logout } = useAuth();
+    const visibleNavItems = user?.is_admin
+        ? [...navItems, { to: '/admin', label: 'Admin dashboard', icon: '!' }]
+        : navItems;
 
     const handleLogout = async () => {
         await logout();
@@ -28,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-ink px-5 py-6 text-white lg:flex">
                 <Brand inverse />
                 <nav className="mt-14 grid gap-2" aria-label="Dashboard navigation">
-                    {navItems.map((item) => (
+                    {visibleNavItems.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
@@ -62,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             {menuOpen && (
                 <nav className="fixed inset-x-4 top-20 z-50 grid gap-2 rounded-2xl border border-black/10 bg-ink p-4 text-white shadow-2xl lg:hidden">
-                    {navItems.map((item) => (
+                    {visibleNavItems.map((item) => (
                         <NavLink key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 text-sm hover:bg-white/10">
                             {item.label}
                         </NavLink>
