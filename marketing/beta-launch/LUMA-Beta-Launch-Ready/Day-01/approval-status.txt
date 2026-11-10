@@ -1,0 +1,8 @@
+REVIEW STATUS: READY FOR RANDY’S APPROVAL
+
+The three supplied Day 1 graphics are included unchanged. Each contains the documented “APPROVED SCREENSHOT REQUIRED BEFORE PUBLISHING” placeholder. Replace that placeholder only with an approved, privacy-safe beta screenshot before publishing.
+
+Brand/link check passed:
+- LUMA mark is sourced from public/logo-mark.png.
+- Campaign palette matches the asset builder: charcoal #171717, cream #F5F1E8, lime #C8F500.
+- Website link shown on the graphics and in the caption: https://lumaword.easytechinfo.net/login
