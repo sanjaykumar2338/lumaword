@@ -4,6 +4,7 @@ import {
     BrowserPushError,
     disableBrowserPush,
     enableBrowserPush,
+    getBrowserPushPermission,
     getCurrentBrowserPushSubscription,
 } from '../../storage/framework/testing/frontend/lib/browserPush.js';
 
@@ -15,6 +16,12 @@ test('refresh returns no active subscription when this browser is unsubscribed',
     const subscription = await getCurrentBrowserPushSubscription(environment);
 
     assert.strictEqual(subscription, null);
+});
+
+test('permission status is exposed so the account page can explain why display may be blocked', () => {
+    const environment = browserPushEnvironment({ permission: 'denied' });
+
+    assert.strictEqual(getBrowserPushPermission(environment), 'denied');
 });
 
 test('enable registers the worker, creates a subscription, and saves it', async () => {
@@ -73,6 +80,7 @@ function browserPushEnvironment({
     currentSubscription = null,
     createdSubscription = pushSubscription(),
     subscribeError,
+    permission = 'granted',
     calls = [],
 } = {}) {
     const pushManager = {
@@ -98,6 +106,7 @@ function browserPushEnvironment({
 
             return 'granted';
         },
+        getPermission: () => permission,
         registerServiceWorker: async () => {
             calls.push(['register']);
         },

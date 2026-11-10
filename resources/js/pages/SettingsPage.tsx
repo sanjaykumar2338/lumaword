@@ -12,6 +12,7 @@ import {
     BrowserPushError,
     disableBrowserPush as unsubscribeBrowserPush,
     enableBrowserPush as subscribeBrowserPush,
+    getBrowserPushPermission,
     getCurrentBrowserPushSubscription,
     isBrowserPushAvailable,
 } from '../lib/browserPush';
@@ -30,6 +31,7 @@ export function SettingsPage() {
     const [reminderWorking, setReminderWorking] = useState(false);
     const browserPushAvailable = isBrowserPushAvailable();
     const [browserSubscription, setBrowserSubscription] = useState<PushSubscription | null>(null);
+    const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission | null>(null);
     const [browserSubscriptionLoading, setBrowserSubscriptionLoading] = useState(browserPushAvailable);
     const [testNotificationWorking, setTestNotificationWorking] = useState(false);
     const [testNotificationStatus, setTestNotificationStatus] = useState<TestNotificationStatus | null>(null);
@@ -54,6 +56,7 @@ export function SettingsPage() {
         }
 
         let current = true;
+        setBrowserNotificationPermission(getBrowserPushPermission());
 
         getCurrentBrowserPushSubscription()
             .then((subscription) => {
@@ -172,11 +175,27 @@ export function SettingsPage() {
         setTestNotificationWorking(true); setTestNotificationStatus(null);
 
         try {
-            const response = await apiRequest<MessageResponse>('/api/v1/push-subscriptions/test', {
+            const permission = getBrowserPushPermission();
+            setBrowserNotificationPermission(permission);
+
+            if (permission !== 'granted') {
+                throw new BrowserPushError('Chrome notification permission is not granted. Allow notifications for Luma in Chrome and try again.');
+            }
+
+            const response = await apiRequest<{
+                message: string;
+                delivery_status: 'accepted_by_push_service';
+                display_status: 'not_confirmed';
+            }>('/api/v1/push-subscriptions/test', {
                 method: 'POST',
                 body: JSON.stringify({ endpoint: browserSubscription.endpoint }),
             });
-            setTestNotificationStatus({ type: 'success', message: response.message });
+            setTestNotificationStatus({
+                type: 'success',
+                message: response.delivery_status === 'accepted_by_push_service'
+                    ? 'Test notification was accepted by the push service. Chrome and Windows must still be allowed to display it.'
+                    : 'The test notification could not be confirmed for delivery. Please try again.',
+            });
         } catch (error) {
             if (error instanceof ApiError && error.status === 410) {
                 try {
@@ -216,6 +235,7 @@ export function SettingsPage() {
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
                     <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking || testNotificationWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking || testNotificationWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}<TestNotificationControl active={browserSubscription !== null} disabled={reminderWorking} sending={testNotificationWorking} status={testNotificationStatus} onSend={sendTestNotification} /></div>
                     <div className="sm:col-span-2"><NotificationHelp /></div>
+                    {browserNotificationPermission && browserNotificationPermission !== 'granted' && <p role="alert" className="text-xs text-amber-800 sm:col-span-2">Chrome permission is currently {browserNotificationPermission}. Allow notifications for Luma before sending a test.</p>}
                     {!browserPushAvailable && <p className="text-xs text-stone-500 sm:col-span-2">This browser does not expose the Web Push APIs Luma needs.</p>}
                     {browserPushAvailable && !reminder.push_supported && <p className="text-xs text-amber-800 sm:col-span-2">Web Push keys must be configured on the server before notifications can be enabled.</p>}
                     <p className="text-xs leading-5 text-stone-500 sm:col-span-2">Web Push works in supported desktop and mobile browsers over HTTPS. This does not enable native iOS app notifications.</p>

@@ -53,6 +53,10 @@ class TestPushNotificationController extends Controller
             ], 502);
         }
 
-        return response()->json(['message' => 'Test notification sent successfully.']);
+        return response()->json([
+            'message' => 'Test notification sent successfully.',
+            'delivery_status' => 'accepted_by_push_service',
+            'display_status' => 'not_confirmed',
+        ]);
     }
 }

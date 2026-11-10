@@ -18,12 +18,19 @@ type ServiceWorkerRegistrationLike = {
 
 export type BrowserPushEnvironment = {
     requestPermission: () => Promise<NotificationPermission>;
+    getPermission: () => NotificationPermission;
     registerServiceWorker: () => Promise<unknown>;
     getReadyRegistration: () => Promise<ServiceWorkerRegistrationLike>;
     getRegistration: () => Promise<ServiceWorkerRegistrationLike | undefined>;
 };
 
 export class BrowserPushError extends Error {}
+
+export function getBrowserPushPermission(
+    environment: BrowserPushEnvironment = browserPushEnvironment(),
+): NotificationPermission {
+    return environment.getPermission();
+}
 
 export function isBrowserPushAvailable(): boolean {
     return typeof navigator !== 'undefined'
@@ -110,6 +117,7 @@ export async function disableBrowserPush(
 function browserPushEnvironment(): BrowserPushEnvironment {
     return {
         requestPermission: () => Notification.requestPermission(),
+        getPermission: () => Notification.permission,
         registerServiceWorker: () => navigator.serviceWorker.register('/service-worker.js'),
         getReadyRegistration: () => navigator.serviceWorker.ready,
         getRegistration: () => navigator.serviceWorker.getRegistration(),
