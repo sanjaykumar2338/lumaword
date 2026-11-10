@@ -55,7 +55,7 @@ jobs:
         run: npm run build
 
       - name: Audit PHP dependencies
-        run: composer audit --locked
+        run: composer audit --locked --ignore-unreachable
 
       - name: Audit frontend dependencies
         run: npm audit --audit-level=high
