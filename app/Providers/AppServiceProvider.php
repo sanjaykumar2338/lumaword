@@ -16,6 +16,7 @@ use App\Services\OpenAiSermonQuestionAnswerer;
 use App\Services\OpenAiSermonService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -87,8 +88,22 @@ class AppServiceProvider extends ServiceProvider
             (int) config('bible_studies.daily_generation_per_user'),
         )->by((string) ($request->user()?->id ?? $request->ip())));
 
-        RateLimiter::for('test-push-notification', fn (Request $request): Limit => Limit::perMinutes(10, 3)
-            ->by((string) ($request->user()?->id ?? $request->ip())));
+        RateLimiter::for('test-push-notification', function (Request $request): Limit {
+            return Limit::perMinutes(10, 3)
+                ->by((string) ($request->user()?->id ?? $request->ip()))
+                ->response(function (Request $request, array $headers): JsonResponse {
+                    $retryAfter = max(1, (int) ($headers['Retry-After'] ?? 1));
+                    $retryMinutes = (int) ceil($retryAfter / 60);
+                    $retryPeriod = $retryAfter >= 60
+                        ? sprintf('%d minute%s', $retryMinutes, $retryMinutes === 1 ? '' : 's')
+                        : sprintf('%d second%s', $retryAfter, $retryAfter === 1 ? '' : 's');
+
+                    return response()->json([
+                        'message' => "Too many test notifications. Please try again in {$retryPeriod}.",
+                        'retry_after' => $retryAfter,
+                    ], 429, $headers);
+                });
+        });
 
         RateLimiter::for('billing', fn (Request $request): Limit => Limit::perMinute(10)
             ->by((string) ($request->user()?->id ?? $request->ip())));

@@ -34,7 +34,20 @@ export function SettingsPage() {
     const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission | null>(null);
     const [browserSubscriptionLoading, setBrowserSubscriptionLoading] = useState(browserPushAvailable);
     const [testNotificationWorking, setTestNotificationWorking] = useState(false);
+    const [testNotificationRetryAfter, setTestNotificationRetryAfter] = useState(0);
     const [testNotificationStatus, setTestNotificationStatus] = useState<TestNotificationStatus | null>(null);
+
+    useEffect(() => {
+        if (testNotificationRetryAfter <= 0) {
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            setTestNotificationRetryAfter((seconds) => Math.max(0, seconds - 1));
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [testNotificationRetryAfter]);
 
     useEffect(() => {
         apiRequest<ResourceResponse<DevotionalReminderPreference>>('/api/v1/devotional-reminder-preferences')
@@ -197,6 +210,10 @@ export function SettingsPage() {
                     : 'The test notification could not be confirmed for delivery. Please try again.',
             });
         } catch (error) {
+            if (error instanceof ApiError && error.status === 429) {
+                setTestNotificationRetryAfter(error.retryAfter ?? 0);
+            }
+
             if (error instanceof ApiError && error.status === 410) {
                 try {
                     await browserSubscription.unsubscribe();
@@ -233,7 +250,7 @@ export function SettingsPage() {
                     <label className="grid gap-2 text-sm font-semibold">Reminder time<input type="time" required value={reminder.reminder_time} onChange={(event) => setReminder({ ...reminder, reminder_time: event.target.value })} className="h-11 rounded-xl border border-stone-300 bg-white px-3 font-normal outline-none focus:border-moss" />{reminderErrors.reminder_time?.[0] && <span className="text-xs text-red-700">{reminderErrors.reminder_time[0]}</span>}</label>
                     <TimezoneSelect id="settings-timezone" label="Timezone" value={reminder.timezone} options={reminder.timezone_options} onChange={(timezone) => setReminder({ ...reminder, timezone })} error={reminderErrors.timezone?.[0]} />
                     <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2"><input type="checkbox" checked={reminder.enabled} onChange={(event) => setReminder({ ...reminder, enabled: event.target.checked })} className="size-5 accent-moss" />Send daily devotional reminders</label>
-                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking || testNotificationWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking || testNotificationWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}<TestNotificationControl active={browserSubscription !== null} disabled={reminderWorking} sending={testNotificationWorking} status={testNotificationStatus} onSend={sendTestNotification} /></div>
+                    <div className="flex flex-wrap gap-3 sm:col-span-2"><button disabled={reminderWorking || testNotificationWorking} className="h-11 rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60">Save reminder settings</button>{browserSubscriptionLoading ? <button type="button" disabled className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink disabled:cursor-not-allowed disabled:opacity-50">Checking browser notifications…</button> : browserSubscription ? <button type="button" disabled={reminderWorking || testNotificationWorking} onClick={disableBrowserPush} className="h-11 rounded-xl border border-red-300 px-5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Disable browser notifications</button> : <button type="button" disabled={reminderWorking || !browserPushAvailable || !reminder.push_supported} onClick={enableBrowserPush} className="h-11 rounded-xl bg-acid px-5 text-sm font-bold text-ink hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50">Enable browser notifications</button>}<TestNotificationControl active={browserSubscription !== null} disabled={reminderWorking} sending={testNotificationWorking} retryAfter={testNotificationRetryAfter} status={testNotificationStatus} onSend={sendTestNotification} /></div>
                     <div className="sm:col-span-2"><NotificationHelp /></div>
                     {browserNotificationPermission && browserNotificationPermission !== 'granted' && <p role="alert" className="text-xs text-amber-800 sm:col-span-2">Chrome permission is currently {browserNotificationPermission}. Allow notifications for Luma before sending a test.</p>}
                     {!browserPushAvailable && <p className="text-xs text-stone-500 sm:col-span-2">This browser does not expose the Web Push APIs Luma needs.</p>}

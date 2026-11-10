@@ -3,6 +3,7 @@ export class ApiError extends Error {
         message: string,
         public readonly status: number,
         public readonly errors: Record<string, string[]> = {},
+        public readonly retryAfter?: number,
     ) {
         super(message);
     }
@@ -59,6 +60,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
             payload.message ?? 'Something went wrong. Please try again.',
             response.status,
             payload.errors ?? {},
+            typeof payload.retry_after === 'number' ? payload.retry_after : undefined,
         );
     }
 

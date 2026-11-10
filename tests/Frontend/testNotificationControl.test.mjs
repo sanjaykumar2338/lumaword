@@ -9,6 +9,7 @@ test('test notification control is only shown for an active subscription and exp
         active: false,
         disabled: false,
         sending: false,
+        retryAfter: 0,
         status: null,
         onSend: () => undefined,
     }));
@@ -16,6 +17,7 @@ test('test notification control is only shown for an active subscription and exp
         active: true,
         disabled: false,
         sending: false,
+        retryAfter: 0,
         status: null,
         onSend: () => undefined,
     }));
@@ -23,6 +25,7 @@ test('test notification control is only shown for an active subscription and exp
         active: true,
         disabled: false,
         sending: true,
+        retryAfter: 0,
         status: { type: 'success', message: 'Test notification sent successfully.' },
         onSend: () => undefined,
     }));
@@ -30,6 +33,7 @@ test('test notification control is only shown for an active subscription and exp
         active: false,
         disabled: false,
         sending: false,
+        retryAfter: 0,
         status: { type: 'error', message: 'The subscription has expired.' },
         onSend: () => undefined,
     }));
@@ -43,4 +47,18 @@ test('test notification control is only shown for an active subscription and exp
     assert.doesNotMatch(errorMarkup, /<button/);
     assert.match(errorMarkup, /role="alert"/);
     assert.match(errorMarkup, /The subscription has expired/);
+});
+
+test('test notification control stays disabled during the server retry window', () => {
+    const cooldownMarkup = renderToStaticMarkup(createElement(TestNotificationControl, {
+        active: true,
+        disabled: false,
+        sending: false,
+        retryAfter: 61,
+        status: { type: 'error', message: 'Too many test notifications.' },
+        onSend: () => undefined,
+    }));
+
+    assert.match(cooldownMarkup, /<button[^>]* disabled=""/);
+    assert.match(cooldownMarkup, />Try again in 2 minutes<\/button>/);
 });

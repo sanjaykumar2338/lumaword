@@ -7,11 +7,12 @@ type TestNotificationControlProps = {
     active: boolean;
     disabled: boolean;
     sending: boolean;
+    retryAfter: number;
     status: TestNotificationStatus | null;
     onSend: () => void;
 };
 
-export function TestNotificationControl({ active, disabled, sending, status, onSend }: TestNotificationControlProps) {
+export function TestNotificationControl({ active, disabled, sending, retryAfter, status, onSend }: TestNotificationControlProps) {
     if (!active && !status) {
         return null;
     }
@@ -21,11 +22,11 @@ export function TestNotificationControl({ active, disabled, sending, status, onS
             {active && (
                 <button
                     type="button"
-                    disabled={disabled || sending}
+                    disabled={disabled || sending || retryAfter > 0}
                     onClick={onSend}
                     className="h-11 rounded-xl border border-moss/25 bg-white px-5 text-sm font-semibold text-moss hover:border-moss/40 hover:bg-lime-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    {sending ? 'Sending test…' : 'Send test notification'}
+                    {sending ? 'Sending test…' : retryAfter > 0 ? `Try again in ${formatRetryAfter(retryAfter)}` : 'Send test notification'}
                 </button>
             )}
             {status && (
@@ -38,4 +39,14 @@ export function TestNotificationControl({ active, disabled, sending, status, onS
             )}
         </>
     );
+}
+
+function formatRetryAfter(seconds: number): string {
+    if (seconds >= 60) {
+        const minutes = Math.ceil(seconds / 60);
+
+        return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+    }
+
+    return `${seconds} second${seconds === 1 ? '' : 's'}`;
 }
