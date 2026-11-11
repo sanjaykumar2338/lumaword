@@ -6,7 +6,9 @@ use App\Contracts\WebPushGateway;
 use App\Models\DevotionalReminderDelivery;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 class SendDevotionalReminder implements ShouldQueue
 {
@@ -15,6 +17,9 @@ class SendDevotionalReminder implements ShouldQueue
     public int $tries = 3;
 
     public int $timeout = 30;
+
+    /** @var array<int, int> */
+    public array $backoff = [30, 120];
 
     public function __construct(public DevotionalReminderDelivery $delivery) {}
 
@@ -76,5 +81,15 @@ class SendDevotionalReminder implements ShouldQueue
         }
 
         $delivery->delete();
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Log::error('Devotional reminder delivery failed after all retries.', [
+            'delivery_id' => $this->delivery->id,
+            'user_id' => $this->delivery->user_id,
+            'reminder_date' => $this->delivery->reminder_date?->toDateString(),
+            'exception_class' => $exception ? $exception::class : null,
+        ]);
     }
 }
