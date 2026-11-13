@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardContr
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Api\V1\Auth\AuthenticationStatusController;
+use App\Http\Controllers\Api\V1\Auth\MobileAuthenticationController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
@@ -41,6 +42,11 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('/auth/status', AuthenticationStatusController::class)->name('auth.status');
 
+    Route::prefix('mobile/auth')->name('mobile.auth.')->group(function (): void {
+        Route::post('/login', [MobileAuthenticationController::class, 'login'])->middleware('throttle:login')->name('login');
+        Route::post('/register', [MobileAuthenticationController::class, 'register'])->middleware('throttle:registration')->name('register');
+    });
+
     Route::middleware('guest:web')->group(function (): void {
         Route::post('/auth/register', RegisteredUserController::class)
             ->middleware('throttle:registration')
@@ -57,6 +63,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     });
 
     Route::middleware('auth:sanctum')->group(function (): void {
+        Route::post('/mobile/auth/logout', [MobileAuthenticationController::class, 'logout'])->name('mobile.auth.logout');
         Route::get('/user', [AuthenticatedUserController::class, 'show'])->name('user.show');
         Route::patch('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
         Route::put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');
