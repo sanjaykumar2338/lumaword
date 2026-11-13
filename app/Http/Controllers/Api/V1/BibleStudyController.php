@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 
 class BibleStudyController extends Controller
 {
@@ -43,6 +44,7 @@ class BibleStudyController extends Controller
             $result = $creator->create(
                 $request->user(),
                 $request->validated('scripture_key'),
+                $request->validated('reader_reference'),
                 BibleStudyDepth::from($request->validated('depth')),
             );
         } catch (BibleStudyGenerationException $exception) {
@@ -51,6 +53,8 @@ class BibleStudyController extends Controller
             }
 
             return response()->json(['message' => $exception->getMessage()], $exception->httpStatus);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
         }
 
         return (new BibleStudyResource($result['study']))

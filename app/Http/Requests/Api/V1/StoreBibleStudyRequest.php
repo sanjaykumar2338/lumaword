@@ -26,10 +26,17 @@ class StoreBibleStudyRequest extends FormRequest
     {
         return [
             'scripture_key' => [
-                'required',
+                'nullable',
                 'string',
                 Rule::in(array_keys(config('scripture.passages', []))),
+                'required_without:reader_reference',
             ],
+            'reader_reference' => ['nullable', 'array', 'required_without:scripture_key'],
+            'reader_reference.translation' => ['required_with:reader_reference', 'string', Rule::in(array_keys(config('bible.translations', [])))],
+            'reader_reference.book' => ['required_with:reader_reference', 'string', 'max:8'],
+            'reader_reference.chapter' => ['required_with:reader_reference', 'integer', 'min:1'],
+            'reader_reference.verse_start' => ['nullable', 'integer', 'min:1'],
+            'reader_reference.verse_end' => ['nullable', 'integer', 'gte:reader_reference.verse_start'],
             'depth' => ['required', Rule::enum(BibleStudyDepth::class)],
         ];
     }
@@ -39,6 +46,8 @@ class StoreBibleStudyRequest extends FormRequest
     {
         return [
             'scripture_key.in' => 'The selected passage is not available in the approved Scripture catalog.',
+            'scripture_key.required_without' => 'Choose a catalog passage or a Bible Reader passage.',
+            'reader_reference.required_without' => 'Choose a catalog passage or a Bible Reader passage.',
             'depth.enum' => 'Choose Quick Read, Go Deeper, or Study in Depth.',
         ];
     }

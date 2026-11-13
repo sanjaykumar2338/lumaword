@@ -98,6 +98,34 @@ class BibleStudyControllerTest extends TestCase
         $this->assertDatabaseCount('bible_studies', 0);
     }
 
+    public function test_reader_passage_can_open_an_ai_study(): void
+    {
+        $user = User::factory()->create();
+        $generator = $this->mock(BibleStudyGenerator::class);
+        $generator->shouldReceive('generate')
+            ->once()
+            ->withArgs(fn (array $scripture, BibleStudyDepth $depth): bool => $scripture['reference'] === 'John 3:16-18'
+                && $scripture['translation'] === 'WEB'
+                && $depth === BibleStudyDepth::QuickRead)
+            ->andReturn($this->generatedStudy());
+
+        $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+            'reader_reference' => [
+                'translation' => 'WEB',
+                'book' => 'JHN',
+                'chapter' => 3,
+                'verse_start' => 16,
+                'verse_end' => 18,
+            ],
+            'depth' => 'quick_read',
+        ])->assertCreated()->assertJsonPath('data.translation', 'WEB');
+
+        $this->assertDatabaseHas('bible_studies', [
+            'user_id' => $user->id,
+            'scripture_key' => 'bible:WEB:JHN:3:16:18',
+        ]);
+    }
+
     public function test_owner_can_reopen_study_and_save_personal_notes_separately(): void
     {
         $user = User::factory()->create();

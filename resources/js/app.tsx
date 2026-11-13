@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardPage } from './pages/DashboardPage';
 import { BibleStudiesPage } from './pages/BibleStudiesPage';
 import { BibleStudyDetailPage } from './pages/BibleStudyDetailPage';
+import { BiblePage } from './pages/BiblePage';
 import { DevotionalsPage } from './pages/DevotionalsPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LandingPage } from './pages/LandingPage';
@@ -70,6 +71,7 @@ function App() {
             <Route path="/sermons" element={<ProtectedRoute><SermonLibraryPage /></ProtectedRoute>} />
             <Route path="/devotionals" element={<ProtectedRoute><DevotionalsPage /></ProtectedRoute>} />
             <Route path="/reading-plans" element={<ProtectedRoute><ReadingPlansPage /></ProtectedRoute>} />
+            <Route path="/bible" element={<ProtectedRoute><BiblePage /></ProtectedRoute>} />
             <Route path="/bible-studies/:studyId" element={<ProtectedRoute><BibleStudyDetailPage /></ProtectedRoute>} />
             <Route path="/bible-studies" element={<ProtectedRoute><BibleStudiesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

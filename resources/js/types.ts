@@ -243,6 +243,33 @@ export type BibleStudy = {
     updated_at: string;
 };
 
+export type BibleTranslation = {
+    abbreviation: string;
+    name: string;
+    edition: string;
+    license: string;
+    availability: 'free' | 'licensed';
+    source_url: string;
+    copyright_url: string;
+};
+
+export type BibleBook = { id: string; name: string; chapter_count: number };
+export type BibleChapter = { number: number; verse_count: number };
+export type BibleVerse = { number: number; text: string; reference: string };
+export type BiblePassage = {
+    translation: BibleTranslation;
+    book: { id: string; name: string };
+    chapter: number;
+    verse_start: number;
+    verse_end: number;
+    verses: BibleVerse[];
+};
+export type BibleSearchResult = BibleVerse & {
+    translation: BibleTranslation;
+    book: { id: string; name: string };
+    chapter: number;
+};
+
 export type ReadingPlanDay = {
     id: number;
     day_number: number;

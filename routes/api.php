@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
 use App\Http\Controllers\Api\V1\BetaFeedbackController;
 use App\Http\Controllers\Api\V1\BibleStudyController;
+use App\Http\Controllers\Api\V1\BibleReaderController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\DailyActivityController;
 use App\Http\Controllers\Api\V1\DevotionalActivityController;
@@ -75,6 +76,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         });
 
         Route::get('/scriptures', ScriptureController::class)->name('scriptures.index');
+        Route::prefix('bible')->name('bible.')->group(function (): void {
+            Route::get('/translations', [BibleReaderController::class, 'translations'])->name('translations.index');
+            Route::get('/books', [BibleReaderController::class, 'books'])->name('books.index');
+            Route::get('/search', [BibleReaderController::class, 'search'])->name('search');
+            Route::get('/{book}/chapters', [BibleReaderController::class, 'chapters'])->name('chapters.index');
+            Route::get('/{book}/chapters/{chapter}', [BibleReaderController::class, 'passage'])->name('passages.show');
+        });
         Route::post('/beta-feedback', [BetaFeedbackController::class, 'store'])
             ->middleware('throttle:beta-feedback')
             ->name('beta-feedback.store');

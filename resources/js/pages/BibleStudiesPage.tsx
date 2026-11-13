@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { ApiError, apiRequest } from '../lib/api';
 import type { BibleStudy, BibleStudyDepth, PaginatedResponse, ResourceResponse, ScriptureOption } from '../types';
@@ -17,12 +17,29 @@ const depths: Array<{ value: BibleStudyDepth; title: string; description: string
 
 export function BibleStudiesPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [scriptures, setScriptures] = useState<ScriptureOption[]>([]);
     const [studies, setStudies] = useState<BibleStudy[]>([]);
     const [source, setSource] = useState<ScriptureResponse['source'] | null>(null);
     const [book, setBook] = useState('');
     const [chapter, setChapter] = useState<number | null>(null);
     const [scriptureKey, setScriptureKey] = useState('');
+    const [readerReference, setReaderReference] = useState<Record<string, string> | null>(() => {
+        const encoded = searchParams.get('reader');
+        if (!encoded) return null;
+        const reference = new URLSearchParams(encoded);
+        const translation = reference.get('translation');
+        const book = reference.get('book');
+        const chapter = reference.get('chapter');
+        if (!translation || !book || !chapter) return null;
+        return {
+            translation,
+            book,
+            chapter,
+            verse_start: reference.get('verse_start') ?? '',
+            verse_end: reference.get('verse_end') ?? '',
+        };
+    });
     const [depth, setDepth] = useState<BibleStudyDepth>('go_deeper');
     const [isLoading, setIsLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -38,9 +55,11 @@ export function BibleStudiesPage() {
             setStudies(studyResponse.data);
             const first = scriptureResponse.data[0];
             if (first) {
-                setBook(first.book);
-                setChapter(first.chapter);
-                setScriptureKey(first.key);
+                if (!readerReference) {
+                    setBook(first.book);
+                    setChapter(first.chapter);
+                    setScriptureKey(first.key);
+                }
             }
         }).catch(() => setError('We could not load the Bible study library. Please try again.'))
             .finally(() => setIsLoading(false));
@@ -65,14 +84,14 @@ export function BibleStudiesPage() {
 
     const generate = async (event: FormEvent) => {
         event.preventDefault();
-        if (!scriptureKey) return;
+        if (!scriptureKey && !readerReference) return;
         setIsGenerating(true);
         setError('');
 
         try {
             const response = await apiRequest<ResourceResponse<BibleStudy> & { meta: { reused: boolean } }>('/api/v1/bible-studies', {
                 method: 'POST',
-                body: JSON.stringify({ scripture_key: scriptureKey, depth }),
+                body: JSON.stringify(readerReference ? { reader_reference: readerReference, depth } : { scripture_key: scriptureKey, depth }),
             });
             navigate(`/bible-studies/${response.data.id}`);
         } catch (requestError) {
@@ -97,14 +116,14 @@ export function BibleStudiesPage() {
                 <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
                     <form onSubmit={generate} className="rounded-[1.75rem] bg-ink p-6 text-white sm:p-8">
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-acid">New study</p><h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">Choose your passage</h2>
-                        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                        {readerReference ? <div className="mt-6 rounded-xl border border-acid/30 bg-acid/10 p-4"><p className="text-xs font-bold uppercase tracking-[0.16em] text-acid">Reader passage</p><p className="mt-2 text-lg font-semibold">{readerReference.book} {readerReference.chapter}:{readerReference.verse_start}-{readerReference.verse_end}</p><button type="button" onClick={() => { setReaderReference(null); setScriptureKey(scriptures[0]?.key ?? ''); }} className="mt-3 text-sm text-stone-300 underline">Choose from the study catalog instead</button></div> : <div className="mt-6 grid gap-4 sm:grid-cols-3">
                             <label className="text-sm font-semibold">Book<select value={book} onChange={(event) => chooseBook(event.target.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">{books.map((name) => <option key={name} value={name} className="text-ink">{name}</option>)}</select></label>
                             <label className="text-sm font-semibold">Chapter<select value={chapter ?? ''} onChange={(event) => chooseChapter(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">{chapters.map((number) => <option key={number} value={number} className="text-ink">{number}</option>)}</select></label>
                             <label className="text-sm font-semibold">Verse range<select value={scriptureKey} onChange={(event) => setScriptureKey(event.target.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white">{passages.map((option) => <option key={option.key} value={option.key} className="text-ink">{option.verse_start}-{option.verse_end}</option>)}</select></label>
-                        </div>
+                        </div>}
 
                         <fieldset className="mt-8"><legend className="text-sm font-semibold">Study depth</legend><div className="mt-3 grid gap-3 lg:grid-cols-3">{depths.map((option) => <label key={option.value} className={`cursor-pointer rounded-xl border p-4 transition ${depth === option.value ? 'border-acid bg-acid/10' : 'border-white/15 hover:border-white/40'}`}><input type="radio" name="depth" value={option.value} checked={depth === option.value} onChange={() => setDepth(option.value)} className="sr-only" /><span className={`block font-semibold ${depth === option.value ? 'text-acid' : 'text-white'}`}>{option.title}</span><span className="mt-2 block text-xs leading-5 text-stone-400">{option.description}</span></label>)}</div></fieldset>
-                        <button disabled={isGenerating || !scriptureKey} className="mt-7 w-full rounded-xl bg-acid px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-white disabled:cursor-wait disabled:opacity-60">{isGenerating ? 'Generating and saving...' : 'Generate and save study'}</button>
+                        <button disabled={isGenerating || (!scriptureKey && !readerReference)} className="mt-7 w-full rounded-xl bg-acid px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-white disabled:cursor-wait disabled:opacity-60">{isGenerating ? 'Generating and saving...' : 'Generate and save study'}</button>
                         <p className="mt-3 text-xs leading-5 text-stone-400">Repeated requests for the same passage and depth reopen the saved study without another AI call.</p>
                     </form>
 
