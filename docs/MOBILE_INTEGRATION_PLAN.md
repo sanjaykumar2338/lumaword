@@ -1,5 +1,12 @@
 # LUMA mobile integration plan
 
+## Mobile client repository
+
+The Flutter mobile client is maintained separately at
+[github.com/sanjaykumar2338/luma-mobile](https://github.com/sanjaykumar2338/luma-mobile).
+The former Laravel checkout copy under `mobile/` was migrated in commit
+`a5808e3` and is no longer part of this repository.
+
 ## Foundation delivered
 
 - Flutter app shell with LUMA colors and the supplied `public/logo-mark.png`.
