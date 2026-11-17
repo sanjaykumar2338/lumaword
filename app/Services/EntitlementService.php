@@ -13,6 +13,17 @@ class EntitlementService
 
     public function isPremium(User $user): bool
     {
+        $mobilePurchase = $user->mobilePurchases()
+            ->where('status', 'active')
+            ->where(function ($query): void {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        if ($mobilePurchase) {
+            return true;
+        }
+
         $subscription = $user->subscription((string) config('billing.subscription_name'));
 
         if ($subscription === null) {

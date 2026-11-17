@@ -8,6 +8,12 @@ return [
         'vapid_private_key' => env('VAPID_PRIVATE_KEY'),
     ],
 
+    'firebase' => [
+        'enabled' => (bool) env('FIREBASE_NOTIFICATIONS_ENABLED', false) && filled(env('FIREBASE_SERVER_KEY')),
+        'server_key' => env('FIREBASE_SERVER_KEY'),
+        'endpoint' => env('FIREBASE_ENDPOINT', 'https://fcm.googleapis.com/fcm/send'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

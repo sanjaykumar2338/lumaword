@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\BetaFeedbackController as AdminBetaFeedbackController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
@@ -11,14 +12,17 @@ use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\AuthenticatedUserController;
 use App\Http\Controllers\Api\V1\BetaFeedbackController;
-use App\Http\Controllers\Api\V1\BibleStudyController;
 use App\Http\Controllers\Api\V1\BibleReaderController;
+use App\Http\Controllers\Api\V1\BibleStudyController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\DailyActivityController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\DevotionalActivityController;
 use App\Http\Controllers\Api\V1\DevotionalController;
 use App\Http\Controllers\Api\V1\DevotionalReminderPreferenceController;
 use App\Http\Controllers\Api\V1\EntitlementController;
+use App\Http\Controllers\Api\V1\MobilePurchaseController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PromotionalBannerController;
@@ -64,6 +68,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/mobile/auth/logout', [MobileAuthenticationController::class, 'logout'])->name('mobile.auth.logout');
+        Route::delete('/user', [AccountController::class, 'destroy'])->name('user.destroy');
+        Route::post('/mobile/device-tokens', [DeviceTokenController::class, 'store'])->name('mobile.device-tokens.store');
+        Route::delete('/mobile/device-tokens', [DeviceTokenController::class, 'destroy'])->name('mobile.device-tokens.destroy');
+        Route::get('/mobile/notification-preferences', [NotificationPreferenceController::class, 'show'])->name('mobile.notification-preferences.show');
+        Route::put('/mobile/notification-preferences', [NotificationPreferenceController::class, 'update'])->name('mobile.notification-preferences.update');
+        Route::post('/mobile/purchases/verify', [MobilePurchaseController::class, 'verify'])->middleware('throttle:billing')->name('mobile.purchases.verify');
+        Route::get('/mobile/purchases/status', [MobilePurchaseController::class, 'status'])->name('mobile.purchases.status');
         Route::get('/user', [AuthenticatedUserController::class, 'show'])->name('user.show');
         Route::patch('/user/profile', [ProfileController::class, 'update'])->name('user.profile.update');
         Route::put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');

@@ -81,6 +81,21 @@ class User extends Authenticatable
         return $this->hasMany(PushSubscription::class);
     }
 
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    public function notificationPreference(): HasOne
+    {
+        return $this->hasOne(NotificationPreference::class);
+    }
+
+    public function mobilePurchases(): HasMany
+    {
+        return $this->hasMany(MobilePurchase::class);
+    }
+
     public function devotionalReminderDeliveries(): HasMany
     {
         return $this->hasMany(DevotionalReminderDelivery::class);

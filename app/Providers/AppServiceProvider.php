@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Contracts\BibleStudyGenerator;
 use App\Contracts\DevotionalGenerator;
 use App\Contracts\MediaTranscriber;
+use App\Contracts\NativeNotificationGateway;
 use App\Contracts\SermonAnalyzer;
 use App\Contracts\SermonQuestionAnswerer;
 use App\Contracts\WebPushGateway;
 use App\Models\User;
+use App\Services\FirebaseNotificationGateway;
 use App\Services\MinishlinkWebPushGateway;
 use App\Services\OpenAiBibleStudyGenerator;
 use App\Services\OpenAiDevotionalGenerator;
@@ -39,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DevotionalGenerator::class, OpenAiDevotionalGenerator::class);
         $this->app->bind(BibleStudyGenerator::class, OpenAiBibleStudyGenerator::class);
         $this->app->bind(WebPushGateway::class, MinishlinkWebPushGateway::class);
+        $this->app->bind(NativeNotificationGateway::class, FirebaseNotificationGateway::class);
     }
 
     /**
