@@ -15,9 +15,11 @@ token returned by the mobile login/register endpoints. Errors are JSON with a
   flags `enabled`, `sermon_processing`, `devotional_reminders`, and
   `subscription_updates`.
 
-Firebase delivery remains disabled unless `FIREBASE_NOTIFICATIONS_ENABLED=true`
-and `FIREBASE_SERVER_KEY` are configured. Provider credentials never reach the
-mobile client. Notification payloads contain `type`, `title`, `body`, and may
+Firebase delivery remains disabled unless `FIREBASE_NOTIFICATIONS_ENABLED=true`,
+`FIREBASE_PROJECT_ID`, and a Firebase service-account JSON credential are
+configured. The gateway uses FCM HTTP v1 and exchanges the service account for
+a short-lived OAuth token; the legacy server-key endpoint is not used. Provider
+credentials never reach the mobile client. Notification payloads contain `type`, `title`, `body`, and may
 contain `route` and `route_arguments`. Supported tap routes are `/sermons/{id}`,
 `/devotionals/{id}`, `/reading-plans/{id}`, and `/entitlements`.
 
@@ -46,7 +48,10 @@ Existing owner-authorized contracts are unchanged:
   `data.usage` shape as `GET /entitlements`.
 
 Verification is server-side, replay-safe by `(store, transaction_id)`, and
-mobile purchases are merged into the existing entitlement source of truth.
-Both store adapters fail closed with a validation error until their credentials
-and enable flags are configured. Stripe/Cashier remains an independent source
-and its checkout/portal contracts are unchanged.
+mobile purchases are merged into the existing entitlement source of truth. The
+Apple adapter uses the App Store Server API, signed JWS transaction data, and a
+configured Apple certificate root; it does not use deprecated `verifyReceipt`.
+The Google adapter uses `purchases.subscriptionsv2.get` with a server-side
+OAuth bearer credential. Both store adapters fail closed with a validation error
+until their credentials and enable flags are configured. Stripe/Cashier remains
+an independent source and its checkout/portal contracts are unchanged.

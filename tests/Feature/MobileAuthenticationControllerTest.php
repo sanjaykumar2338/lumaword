@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class MobileAuthenticationControllerTest extends TestCase
@@ -39,11 +40,33 @@ class MobileAuthenticationControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $token = $user->createToken('test-device')->plainTextToken;
+        $otherToken = $user->createToken('other-device')->plainTextToken;
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/mobile/auth/logout')->assertOk();
 
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/user')->assertUnauthorized();
+
+        $this->withHeader('Authorization', 'Bearer '.$otherToken)
+            ->getJson('/api/v1/user')->assertOk();
+    }
+
+    public function test_mobile_logout_does_not_log_out_a_website_session(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('mobile-device')->plainTextToken;
+
+        $this->actingAs($user, 'web')
+            ->postJson('/api/v1/mobile/auth/logout')
+            ->assertOk();
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+        $this->assertTrue(Auth::guard('web')->check());
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/user')->assertOk();
     }
 }

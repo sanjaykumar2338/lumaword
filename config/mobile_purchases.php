@@ -3,9 +3,10 @@
 return [
     'products' => ['luma_monthly' => 'premium', 'luma_annual' => 'premium'],
     'app_store' => [
-        'enabled' => (bool) env('APPLE_PURCHASES_ENABLED', false) && filled(env('APPLE_BUNDLE_ID')) && filled(env('APPLE_SHARED_SECRET')),
+        'enabled' => (bool) env('APPLE_PURCHASES_ENABLED', false) && filled(env('APPLE_BUNDLE_ID')) && filled(env('APPLE_PRIVATE_KEY')) && filled(env('APPLE_KEY_ID')) && filled(env('APPLE_ISSUER_ID')) && filled(env('APPLE_ROOT_CERTIFICATE')),
         'bundle_id' => env('APPLE_BUNDLE_ID'), 'private_key' => env('APPLE_PRIVATE_KEY'),
         'key_id' => env('APPLE_KEY_ID'), 'issuer_id' => env('APPLE_ISSUER_ID'), 'shared_secret' => env('APPLE_SHARED_SECRET'),
+        'root_certificate' => env('APPLE_ROOT_CERTIFICATE'),
     ],
     'play_store' => [
         'enabled' => (bool) env('GOOGLE_PURCHASES_ENABLED', false) && filled(env('GOOGLE_PACKAGE_NAME')) && filled(env('GOOGLE_ACCESS_TOKEN')),

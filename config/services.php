@@ -9,9 +9,12 @@ return [
     ],
 
     'firebase' => [
-        'enabled' => (bool) env('FIREBASE_NOTIFICATIONS_ENABLED', false) && filled(env('FIREBASE_SERVER_KEY')),
-        'server_key' => env('FIREBASE_SERVER_KEY'),
-        'endpoint' => env('FIREBASE_ENDPOINT', 'https://fcm.googleapis.com/fcm/send'),
+        'enabled' => (bool) env('FIREBASE_NOTIFICATIONS_ENABLED', false)
+            && filled(env('FIREBASE_PROJECT_ID'))
+            && filled(env('FIREBASE_SERVICE_ACCOUNT_JSON')),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'service_account_json' => env('FIREBASE_SERVICE_ACCOUNT_JSON'),
+        'endpoint' => env('FIREBASE_ENDPOINT', 'https://fcm.googleapis.com/v1/projects/%s/messages:send'),
     ],
 
     /*
