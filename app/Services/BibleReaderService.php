@@ -95,6 +95,17 @@ class BibleReaderService
         ];
     }
 
+    /** Resolve a catalog ID, display name, or configured abbreviation to its canonical ID. */
+    public function resolveBookId(string $translation, string $book): string
+    {
+        $candidate = $this->findBook($translation, $book);
+        if (! is_array($candidate)) {
+            throw new InvalidArgumentException('The requested Bible book is not available.');
+        }
+
+        return (string) $candidate['id'];
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function search(string $translation, string $query, int $perPage = 20): array
     {
@@ -152,10 +163,8 @@ class BibleReaderService
             return null;
         }
 
-        $book = collect(config('bible.book_aliases', []))->get(Str::lower($matches['book']), $matches['book']);
-
         return [
-            'book' => (string) $book,
+            'book' => trim((string) $matches['book']),
             'chapter' => (int) $matches['chapter'],
             'verse_start' => (int) ($matches['start'] ?? 1),
             'verse_end' => (int) ($matches['end'] ?? $matches['start'] ?? 999),
@@ -183,7 +192,7 @@ class BibleReaderService
     /** @return array<string, mixed> */
     private function book(string $translation, string $bookId): array
     {
-        $book = collect($this->catalog($translation)['books'])->firstWhere('id', Str::upper($bookId));
+        $book = $this->findBook($translation, $bookId);
         if (! is_array($book)) {
             throw new InvalidArgumentException('The requested Bible book is not available.');
         }
@@ -228,13 +237,45 @@ class BibleReaderService
             return null;
         }
 
-        $book = collect($this->books($translation))->first(fn (array $book): bool => Str::lower($book['name']) === Str::lower($reference['book']) || $book['id'] === Str::upper($reference['book']));
-        if (! is_array($book)) {
+        try {
+            $reference['book'] = $this->resolveBookId($translation, $reference['book']);
+        } catch (InvalidArgumentException) {
             return null;
         }
 
-        $reference['book'] = $book['id'];
-
         return $reference;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findBook(string $translation, string $book): ?array
+    {
+        $normalized = $this->normalizeBookName($book);
+        $alias = config('bible.book_aliases.'.$normalized);
+        $alias = $alias === null ? null : $this->normalizeBookName((string) $alias);
+
+        return collect($this->catalog($translation)['books'])->first(function (mixed $candidate) use ($normalized, $alias): bool {
+            if (! is_array($candidate)) {
+                return false;
+            }
+
+            $id = Str::lower((string) ($candidate['id'] ?? ''));
+            $name = $this->normalizeBookName((string) ($candidate['name'] ?? ''));
+
+            return $normalized === $id
+                || $normalized === $name
+                || ($alias !== null && ($alias === $id || $alias === $name));
+        });
+    }
+
+    private function normalizeBookName(string $book): string
+    {
+        return (string) Str::of($book)
+            ->lower()
+            ->replace(['.', ',', ':'], '')
+            ->replaceMatches('/^(first|1st)\s+/', '1 ')
+            ->replaceMatches('/^(second|2nd)\s+/', '2 ')
+            ->replaceMatches('/^(third|3rd)\s+/', '3 ')
+            ->replaceMatches('/\s+/', ' ')
+            ->trim();
     }
 }

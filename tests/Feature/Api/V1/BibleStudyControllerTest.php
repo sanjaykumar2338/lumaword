@@ -126,6 +126,80 @@ class BibleStudyControllerTest extends TestCase
         ]);
     }
 
+    public function test_reader_reference_resolves_display_names_aliases_and_numbered_books(): void
+    {
+        config([
+            'bible_studies.daily_generation_per_user' => 20,
+            'ai_usage.limits.free.bible_study' => 20,
+        ]);
+        $user = User::factory()->create();
+        $cases = [
+            ['book' => 'John', 'chapter' => 3, 'verse_start' => 16],
+            ['book' => 'Gen', 'chapter' => 1, 'verse_start' => 1],
+            ['book' => 'Psalm', 'chapter' => 23, 'verse_start' => 1],
+            ['book' => '1 Corinthians', 'chapter' => 13, 'verse_start' => 1],
+            ['book' => '2 Tim', 'chapter' => 3, 'verse_start' => 16],
+            ['book' => 'Rev', 'chapter' => 21, 'verse_start' => 4],
+        ];
+        $generator = $this->mock(BibleStudyGenerator::class);
+        $generator->shouldReceive('generate')->times(count($cases))->andReturn($this->generatedStudy());
+
+        foreach ($cases as $case) {
+            $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+                'reader_reference' => [...$case, 'translation' => 'WEB'],
+                'depth' => 'quick_read',
+            ])->assertCreated();
+        }
+
+        $this->assertDatabaseCount('bible_studies', count($cases));
+    }
+
+    public function test_reader_reference_works_with_all_supported_translations(): void
+    {
+        config([
+            'bible_studies.daily_generation_per_user' => 20,
+            'ai_usage.limits.free.bible_study' => 20,
+        ]);
+        $user = User::factory()->create();
+        $generator = $this->mock(BibleStudyGenerator::class);
+        $generator->shouldReceive('generate')->times(3)->andReturn($this->generatedStudy());
+
+        foreach (['WEB', 'KJV', 'ASV'] as $translation) {
+            $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+                'reader_reference' => [
+                    'translation' => $translation,
+                    'book' => 'John',
+                    'chapter' => 3,
+                    'verse_start' => 16,
+                ],
+                'depth' => 'go_deeper',
+            ])->assertCreated()->assertJsonPath('data.translation', $translation);
+        }
+    }
+
+    public function test_reader_reference_rejects_invalid_chapters_and_translations(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+            'reader_reference' => [
+                'translation' => 'WEB',
+                'book' => 'John',
+                'chapter' => 22,
+            ],
+            'depth' => 'quick_read',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['reader_reference']);
+
+        $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+            'reader_reference' => [
+                'translation' => 'NIV',
+                'book' => 'John',
+                'chapter' => 3,
+            ],
+            'depth' => 'quick_read',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['reader_reference.translation']);
+    }
+
     public function test_owner_can_reopen_study_and_save_personal_notes_separately(): void
     {
         $user = User::factory()->create();

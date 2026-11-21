@@ -4,7 +4,24 @@ return [
     'default_translation' => 'WEB',
 
     'book_aliases' => [
-        'psalm' => 'Psalms',
+        'psalm' => 'PSA',
+        'ps' => 'PSA',
+        'gen' => 'GEN',
+        'ge' => 'GEN',
+        'ex' => 'EXO',
+        'exo' => 'EXO',
+        'jn' => 'JHN',
+        'jhn' => 'JHN',
+        'rev' => 'REV',
+        're' => 'REV',
+        '1 cor' => '1CO',
+        '1cor' => '1CO',
+        '2 cor' => '2CO',
+        '2cor' => '2CO',
+        '1 tim' => '1TI',
+        '1tim' => '1TI',
+        '2 tim' => '2TI',
+        '2tim' => '2TI',
     ],
 
     'translations' => [
