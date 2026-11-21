@@ -22,11 +22,16 @@ class GooglePlayPurchaseVerifier implements StorePurchaseVerifier
             throw ValidationException::withMessages(['verification_data' => 'Google Play rejected this transaction.']);
         }
 
+        $verifiedTransactionId = $line['latestSuccessfulOrderId'] ?? null;
+        if (is_string($verifiedTransactionId) && $verifiedTransactionId !== $transactionId) {
+            throw ValidationException::withMessages(['transaction_id' => 'Google Play transaction details do not match the purchase.']);
+        }
+
         return [
             'status' => ($purchase['subscriptionState'] ?? null) === 'SUBSCRIPTION_STATE_ACTIVE' ? 'active' : 'grace_period',
             'product_id' => $productId, 'transaction_id' => $transactionId, 'original_transaction_id' => null,
             'purchased_at' => null, 'expires_at' => isset($line['expiryTime']) ? $line['expiryTime'] : null,
-            'response' => $purchase,
+            'provider_response' => $purchase,
         ];
     }
 }

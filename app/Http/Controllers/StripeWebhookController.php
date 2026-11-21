@@ -12,6 +12,8 @@ class StripeWebhookController extends WebhookController
 {
     public function handleWebhook(Request $request): Response
     {
+        abort_unless(filled(config('cashier.webhook.secret')), 503, 'Stripe webhook verification is not configured.');
+
         $payload = $request->json()->all();
         $eventId = (string) ($payload['id'] ?? '');
         $subjectId = data_get($payload, 'data.object.id');
@@ -33,10 +35,27 @@ class StripeWebhookController extends WebhookController
             return new Response('Out-of-order webhook ignored', 200);
         }
 
-        $event = StripeWebhookEvent::query()->updateOrCreate(['stripe_event_id' => $eventId], [
+        $eventData = [
             'type' => (string) ($payload['type'] ?? 'unknown'), 'subject_id' => is_string($subjectId) ? $subjectId : null,
             'stripe_created_at' => (int) ($payload['created'] ?? 0), 'status' => 'processing',
+        ];
+        $inserted = StripeWebhookEvent::query()->insertOrIgnore([
+            'stripe_event_id' => $eventId,
+            ...$eventData,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+
+        if ($inserted === 0) {
+            $existing = StripeWebhookEvent::query()->where('stripe_event_id', $eventId)->first();
+            if ($existing?->status === 'failed') {
+                $existing->update($eventData);
+            } else {
+                return new Response('Webhook already handled', 200);
+            }
+        }
+
+        $event = StripeWebhookEvent::query()->where('stripe_event_id', $eventId)->firstOrFail();
 
         try {
             $response = parent::handleWebhook($request);

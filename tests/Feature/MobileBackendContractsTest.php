@@ -81,7 +81,10 @@ class MobileBackendContractsTest extends TestCase
         ]);
 
         $this->actingAs($user)->getJson('/api/v1/mobile/purchases/status')
-            ->assertOk()->assertJsonPath('data.membership.plan', 'premium');
+            ->assertOk()
+            ->assertJsonPath('data.membership.plan', 'premium')
+            ->assertJsonPath('data.membership.status', 'active')
+            ->assertJsonPath('data.membership.renews_or_ends_at', $user->mobilePurchases()->sole()->expires_at->toISOString());
     }
 
     public function test_account_deletion_requires_exact_confirmation_and_removes_owned_data(): void

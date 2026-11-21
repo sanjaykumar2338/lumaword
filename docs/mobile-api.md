@@ -47,6 +47,14 @@ Existing owner-authorized contracts are unchanged:
 - `GET /mobile/purchases/status` returns the same `data.membership` and
   `data.usage` shape as `GET /entitlements`.
 
+Configure the monthly and annual store product IDs in `.env` (the four
+`*_PRODUCT_ID` settings in `.env.example`) and use those same IDs in the
+Flutter build flags. The backend normalizes them to the canonical
+`luma_monthly` and `luma_annual` entitlements. Native billing is disabled by
+default; Flutter build flags and store credentials must be enabled together.
+Mobile membership responses report the verified provider status and expiry
+date, while Stripe/Cashier remains the independent website entitlement source.
+
 Verification is server-side, replay-safe by `(store, transaction_id)`, and
 mobile purchases are merged into the existing entitlement source of truth. The
 Apple adapter uses the App Store Server API, signed JWS transaction data, and a

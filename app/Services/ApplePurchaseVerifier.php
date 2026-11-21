@@ -41,7 +41,7 @@ class ApplePurchaseVerifier implements StorePurchaseVerifier
             'product_id' => $productId, 'transaction_id' => $transactionId,
             'original_transaction_id' => $transaction['originalTransactionId'] ?? null,
             'purchased_at' => isset($transaction['purchaseDate']) ? now()->createFromTimestampMs((int) $transaction['purchaseDate'])->toISOString() : null,
-            'expires_at' => $expiresAt?->toISOString(), 'response' => ['signed_transaction_info' => $signedTransaction],
+            'expires_at' => $expiresAt?->toISOString(), 'provider_response' => ['signed_transaction_info' => $signedTransaction],
         ];
     }
 

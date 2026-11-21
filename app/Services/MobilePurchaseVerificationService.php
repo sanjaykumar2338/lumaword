@@ -23,11 +23,16 @@ class MobilePurchaseVerificationService
         }
 
         $verifier = $store === 'app_store' ? $this->apple : $this->google;
-        $verified = $verifier->verify($productId, $transactionId, $verificationData);
+        $storeKey = $store === 'app_store' ? 'app_store_id' : 'play_store_id';
+        $providerProductId = data_get(config("mobile_purchases.products.{$productId}"), $storeKey);
+        if (! is_string($providerProductId) || $providerProductId === '') {
+            throw ValidationException::withMessages(['product_id' => 'This store product is not configured yet.']);
+        }
+        $verified = $verifier->verify($providerProductId, $transactionId, $verificationData);
 
         return $this->database->transaction(fn (): MobilePurchase => MobilePurchase::query()->updateOrCreate(
             ['store' => $store, 'transaction_id' => $transactionId],
-            [...$verified, 'verification_data' => $verificationData, 'last_verified_at' => now(), 'user_id' => $user->id],
+            [...$verified, 'product_id' => $productId, 'verification_data' => $verificationData, 'last_verified_at' => now(), 'user_id' => $user->id],
         ));
     }
 }

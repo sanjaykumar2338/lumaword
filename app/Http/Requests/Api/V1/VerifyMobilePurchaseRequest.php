@@ -23,4 +23,19 @@ class VerifyMobilePurchaseRequest extends FormRequest
             'verification_data' => ['required', 'string', 'max:100000'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        $store = (string) $this->input('store');
+        $productId = (string) $this->input('product_id');
+        $storeKey = $store === 'app_store' ? 'app_store_id' : 'play_store_id';
+
+        foreach ((array) config('mobile_purchases.products') as $canonicalId => $product) {
+            if (($product[$storeKey] ?? null) === $productId) {
+                $this->merge(['product_id' => $canonicalId]);
+
+                return;
+            }
+        }
+    }
 }

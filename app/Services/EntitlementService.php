@@ -42,13 +42,23 @@ class EntitlementService
     /** @return array<string, mixed> */
     public function subscription(User $user): array
     {
+        $mobilePurchase = $user->mobilePurchases()
+            ->where('status', 'active')
+            ->where(function ($query): void {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->latest('expires_at')
+            ->first();
         $subscription = $user->subscription((string) config('billing.subscription_name'));
+        $status = $mobilePurchase?->status ?? $subscription?->stripe_status ?? 'free';
+        $renewsOrEndsAt = $mobilePurchase?->expires_at?->toISOString()
+            ?? ($subscription?->trial_ends_at ?? $subscription?->ends_at)?->toISOString();
 
         return [
             'plan' => $this->plan($user),
-            'status' => $subscription?->stripe_status ?? 'free',
-            'renews_or_ends_at' => ($subscription?->trial_ends_at ?? $subscription?->ends_at)?->toISOString(),
-            'on_grace_period' => $subscription?->onGracePeriod() ?? false,
+            'status' => $status,
+            'renews_or_ends_at' => $renewsOrEndsAt,
+            'on_grace_period' => $mobilePurchase === null && ($subscription?->onGracePeriod() ?? false),
             'billing_enabled' => (bool) config('billing.enabled'),
         ];
     }
