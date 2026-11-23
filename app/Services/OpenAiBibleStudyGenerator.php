@@ -6,7 +6,12 @@ use App\BibleStudyDepth;
 use App\Contracts\BibleStudyGenerator;
 use App\Exceptions\BibleStudyGenerationException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use JsonException;
 use Throwable;
 
 class OpenAiBibleStudyGenerator implements BibleStudyGenerator
@@ -40,18 +45,25 @@ class OpenAiBibleStudyGenerator implements BibleStudyGenerator
                     ]],
                 ])->throw();
 
-            $text = collect($response->json('output', []))
-                ->flatMap(fn (array $item): array => $item['content'] ?? [])
-                ->firstWhere('type', 'output_text')['text'] ?? null;
+            $outputText = collect($response->json('output', []))
+                ->flatMap(fn (mixed $item): array => is_array($item) && is_array($item['content'] ?? null) ? $item['content'] : [])
+                ->first(fn (mixed $item): bool => is_array($item) && ($item['type'] ?? null) === 'output_text');
+            $text = is_array($outputText) ? ($outputText['text'] ?? null) : null;
 
             if (! is_string($text)) {
-                throw new BibleStudyGenerationException('The AI provider returned no Bible study.');
+                throw new BibleStudyGenerationException(
+                    'The AI provider returned an invalid study format. Please try again.',
+                    category: BibleStudyGenerationException::VALIDATION,
+                );
             }
 
             $decoded = json_decode($text, true, flags: JSON_THROW_ON_ERROR);
 
             if (! is_array($decoded)) {
-                throw new BibleStudyGenerationException('The AI provider returned an invalid Bible study.');
+                throw new BibleStudyGenerationException(
+                    'The AI provider returned an invalid study format. Please try again.',
+                    category: BibleStudyGenerationException::VALIDATION,
+                );
             }
 
             $responseId = $response->json('id');
@@ -64,12 +76,47 @@ class OpenAiBibleStudyGenerator implements BibleStudyGenerator
                 'response_id' => is_string($responseId) ? $responseId : null,
             ];
         } catch (BibleStudyGenerationException $exception) {
+            $this->logFailure($exception, $scripture, $depth);
             throw $exception;
+        } catch (ConnectionException $exception) {
+            $failure = new BibleStudyGenerationException(
+                'Bible study generation timed out. Please try again.',
+                previous: $exception,
+                category: BibleStudyGenerationException::TIMEOUT,
+            );
+            $this->logFailure($failure, $scripture, $depth);
+            throw $failure;
+        } catch (RequestException $exception) {
+            $failure = new BibleStudyGenerationException(
+                'The AI provider is temporarily unavailable. Please try again.',
+                previous: $exception,
+                category: BibleStudyGenerationException::PROVIDER,
+            );
+            $this->logFailure($failure, $scripture, $depth, $exception->response->status());
+            throw $failure;
+        } catch (JsonException $exception) {
+            $failure = new BibleStudyGenerationException(
+                'The AI provider returned an invalid study format. Please try again.',
+                previous: $exception,
+                category: BibleStudyGenerationException::VALIDATION,
+            );
+            $this->logFailure($failure, $scripture, $depth);
+            throw $failure;
+        } catch (ValidationException $exception) {
+            $failure = new BibleStudyGenerationException(
+                'The AI provider returned an invalid study format. Please try again.',
+                previous: $exception,
+                category: BibleStudyGenerationException::VALIDATION,
+            );
+            $this->logFailure($failure, $scripture, $depth);
+            throw $failure;
         } catch (Throwable $exception) {
-            throw new BibleStudyGenerationException(
+            $failure = new BibleStudyGenerationException(
                 'Luma could not generate this study right now. No partial study was saved.',
                 previous: $exception,
             );
+            $this->logFailure($failure, $scripture, $depth);
+            throw $failure;
         }
     }
 
@@ -80,6 +127,7 @@ class OpenAiBibleStudyGenerator implements BibleStudyGenerator
         if (! is_string($key) || $key === '') {
             throw new BibleStudyGenerationException(
                 'Bible study generation is not configured. Add OPENAI_API_KEY to the server environment.',
+                category: BibleStudyGenerationException::CONFIGURATION,
             );
         }
 
@@ -122,5 +170,23 @@ INSTRUCTIONS;
             'sha256',
             $scripture['reference'].'|'.$scripture['translation'].'|'.$depth->value.'|'.config('bible_studies.prompt_version'),
         );
+    }
+
+    /** @param array{reference: string, translation: string, text: string} $scripture */
+    private function logFailure(
+        BibleStudyGenerationException $failure,
+        array $scripture,
+        BibleStudyDepth $depth,
+        ?int $providerStatus = null,
+    ): void {
+        Log::warning('Bible study generation failed', [
+            'category' => $failure->category,
+            'http_status' => $failure->httpStatus,
+            'provider_status' => $providerStatus,
+            'translation' => $scripture['translation'] ?? null,
+            'depth' => $depth->value,
+            'reference_hash' => hash('sha256', (string) ($scripture['reference'] ?? '')),
+            'model' => (string) config('services.openai.model'),
+        ]);
     }
 }

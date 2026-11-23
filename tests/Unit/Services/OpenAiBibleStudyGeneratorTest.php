@@ -48,12 +48,51 @@ class OpenAiBibleStudyGeneratorTest extends TestCase
             'https://api.openai.com/v1/responses' => Http::response(['error' => ['message' => 'Provider details']], 500),
         ]);
         $this->expectException(BibleStudyGenerationException::class);
-        $this->expectExceptionMessage('Luma could not generate this study right now. No partial study was saved.');
+        $this->expectExceptionMessage('The AI provider is temporarily unavailable. Please try again.');
 
         (new OpenAiBibleStudyGenerator(new BibleStudyContentSchema))->generate(
             ['reference' => 'Psalm 23:1-6', 'translation' => 'WEB', 'text' => 'Trusted passage text.'],
             BibleStudyDepth::QuickRead,
         );
+    }
+
+    public function test_quick_read_and_go_deeper_use_the_selected_depth(): void
+    {
+        $this->configureOpenAi();
+        Http::preventStrayRequests();
+        $content = json_encode(BibleStudyFactory::content());
+        Http::fake([
+            'https://api.openai.com/v1/responses' => Http::sequence()
+                ->push(['id' => 'quick', 'output' => [['content' => [['type' => 'output_text', 'text' => $content]]]]])
+                ->push(['id' => 'deep', 'output' => [['content' => [['type' => 'output_text', 'text' => $content]]]]]),
+        ]);
+
+        $generator = new OpenAiBibleStudyGenerator(new BibleStudyContentSchema);
+        $scripture = ['reference' => 'John 3:16', 'translation' => 'WEB', 'text' => 'Trusted passage text.'];
+        $generator->generate($scripture, BibleStudyDepth::QuickRead);
+        $generator->generate($scripture, BibleStudyDepth::GoDeeper);
+
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request): bool => str_contains($request['input'][0]['content'][0]['text'], 'Quick Read'));
+        Http::assertSent(fn ($request): bool => str_contains($request['input'][0]['content'][0]['text'], 'Go Deeper'));
+    }
+
+    public function test_invalid_structured_response_is_classified_and_logged_without_source_text(): void
+    {
+        $this->configureOpenAi();
+        Http::fake(['https://api.openai.com/v1/responses' => Http::response([
+            'id' => 'invalid',
+            'output' => [['content' => [['type' => 'output_text', 'text' => '{\"unexpected\":true}']]]],
+        ])]);
+        try {
+            (new OpenAiBibleStudyGenerator(new BibleStudyContentSchema))->generate(
+                ['reference' => 'John 3:16', 'translation' => 'WEB', 'text' => 'PRIVATE TRANSCRIPT TEXT'],
+                BibleStudyDepth::QuickRead,
+            );
+            $this->fail('Expected a generation exception.');
+        } catch (BibleStudyGenerationException $exception) {
+            $this->assertSame(BibleStudyGenerationException::VALIDATION, $exception->category);
+        }
     }
 
     private function configureOpenAi(): void

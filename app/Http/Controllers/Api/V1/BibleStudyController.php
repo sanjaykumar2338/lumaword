@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class BibleStudyController extends Controller
@@ -49,7 +50,10 @@ class BibleStudyController extends Controller
             );
         } catch (BibleStudyGenerationException $exception) {
             if ($exception->httpStatus >= 500) {
-                report($exception);
+                Log::error('Bible study request failed', [
+                    'category' => $exception->category,
+                    'http_status' => $exception->httpStatus,
+                ]);
             }
 
             return response()->json(['message' => $exception->getMessage()], $exception->httpStatus);

@@ -63,3 +63,40 @@ The Google adapter uses `purchases.subscriptionsv2.get` with a server-side
 OAuth bearer credential. Both store adapters fail closed with a validation error
 until their credentials and enable flags are configured. Stripe/Cashier remains
 an independent source and its checkout/portal contracts are unchanged.
+
+## AI Bible studies
+
+\`POST /bible-studies\` requires authentication and accepts either a catalog
+passage or a reader reference:
+
+\`\`\`json
+{
+  "reader_reference": {
+    "translation": "WEB",
+    "book": "John",
+    "chapter": 3,
+    "verse_start": 16,
+    "verse_end": 18
+  },
+  "depth": "quick_read"
+}
+\`\`\`
+
+\`depth\` is \`quick_read\` or \`go_deeper\`; translations are \`WEB\`, \`KJV\`,
+and \`ASV\`. Book names, standard abbreviations, and numbered books are
+normalized against the same catalog used by the Bible reader. Omit
+\`verse_start\` and \`verse_end\` to study the chapter. A new study returns
+\`201\` with \`data\`; an identical saved study returns \`200\` with
+\`meta.reused: true\`. Invalid books, chapters, verse ranges, depths, and
+translations return \`422\`.
+
+Provider, timeout, configuration, and structured-response failures return a
+safe \`message\` with no provider response body. The server logs only an error
+category, status, translation, depth, model, and a one-way reference hash.
+
+The current API does not expose bookmark/highlight persistence, devotional
+favorites, or authenticated sermon-audio playback. Flutter should not invent
+local synchronization for these. To add them safely, the backend needs
+user-owned persistence endpoints and, for audio, a signed/authorized stream
+endpoint backed by retained media; sermon uploads are currently private
+processing inputs and may be deleted after transcription.
