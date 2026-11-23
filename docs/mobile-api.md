@@ -66,10 +66,10 @@ an independent source and its checkout/portal contracts are unchanged.
 
 ## AI Bible studies
 
-\`POST /bible-studies\` requires authentication and accepts either a catalog
+`POST /bible-studies` requires authentication and accepts either a catalog
 passage or a reader reference:
 
-\`\`\`json
+```json
 {
   "reader_reference": {
     "translation": "WEB",
@@ -80,18 +80,18 @@ passage or a reader reference:
   },
   "depth": "quick_read"
 }
-\`\`\`
+```
 
-\`depth\` is \`quick_read\` or \`go_deeper\`; translations are \`WEB\`, \`KJV\`,
-and \`ASV\`. Book names, standard abbreviations, and numbered books are
+`depth` is `quick_read` or `go_deeper`; translations are `WEB`, `KJV`,
+and `ASV`. Book names, standard abbreviations, and numbered books are
 normalized against the same catalog used by the Bible reader. Omit
-\`verse_start\` and \`verse_end\` to study the chapter. A new study returns
-\`201\` with \`data\`; an identical saved study returns \`200\` with
-\`meta.reused: true\`. Invalid books, chapters, verse ranges, depths, and
-translations return \`422\`.
+`verse_start` and `verse_end` to study the chapter. A new study returns
+`201` with `data`; an identical saved study returns `200` with
+`meta.reused: true`. Invalid books, chapters, verse ranges, depths, and
+translations return `422`.
 
 Provider, timeout, configuration, and structured-response failures return a
-safe \`message\` with no provider response body. The server logs only an error
+safe `message` with no provider response body. The server logs only an error
 category, status, translation, depth, model, and a one-way reference hash.
 
 The current API does not expose bookmark/highlight persistence, devotional
