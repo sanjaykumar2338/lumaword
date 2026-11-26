@@ -17,6 +17,7 @@ class SermonProcessingMonitor
                 SermonProcessingStatus::Transcribing->value,
                 SermonProcessingStatus::Queued->value,
                 SermonProcessingStatus::Analyzing->value,
+                SermonProcessingStatus::RetrievingTranscript->value,
             ])
             ->whereNotNull('processing_started_at')
             ->where('processing_started_at', '<=', $staleBefore)

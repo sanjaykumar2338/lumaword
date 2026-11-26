@@ -22,6 +22,7 @@ class ReadingPlanResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'duration_days' => $this->duration_days,
+            'complete_canon' => $this->slug === 'the-bible-in-thirty-days',
             'days' => $this->whenLoaded('days', fn () => $this->days->map(function ($day): array {
                 $scripture = config("scripture.passages.{$day->scripture_key}");
 
@@ -31,8 +32,9 @@ class ReadingPlanResource extends JsonResource
                     'title' => $day->title,
                     'scripture_key' => $day->scripture_key,
                     'scripture_reference' => $day->scripture_reference,
-                    'translation' => $scripture['translation'],
-                    'scripture_text' => $scripture['text'],
+                    'translation' => $scripture['translation'] ?? 'WEB',
+                    'scripture_text' => $scripture['text'] ?? null,
+                    'readings' => $day->chapter_assignments ?? [],
                 ];
             })),
             'enrollment' => $enrollment === null ? null : [

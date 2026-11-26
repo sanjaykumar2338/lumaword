@@ -200,6 +200,19 @@ class BibleStudyControllerTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors(['reader_reference.translation']);
     }
 
+    public function test_reader_reference_accepts_a_complete_nehemiah_chapter(): void
+    {
+        $user = User::factory()->create();
+        $generator = $this->mock(BibleStudyGenerator::class);
+        $generator->shouldReceive('generate')->once()->withArgs(fn (array $scripture): bool => $scripture['reference'] === 'Nehemiah 1:1-11')
+            ->andReturn($this->generatedStudy());
+
+        $this->actingAs($user)->postJson('/api/v1/bible-studies', [
+            'reader_reference' => ['translation' => 'WEB', 'book' => 'Nehemiah', 'chapter' => 1],
+            'depth' => 'quick_read',
+        ])->assertCreated();
+    }
+
     public function test_owner_can_reopen_study_and_save_personal_notes_separately(): void
     {
         $user = User::factory()->create();

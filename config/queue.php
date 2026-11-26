@@ -15,6 +15,8 @@ return [
 
     'default' => env('QUEUE_CONNECTION', 'database'),
 
+    'youtube_queue' => env('YOUTUBE_QUEUE', 'youtube'),
+
     /*
     |--------------------------------------------------------------------------
     | Queue Connections

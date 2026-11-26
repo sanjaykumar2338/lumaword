@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NotificationPreference extends Model
 {
-    protected $fillable = ['enabled', 'sermon_processing', 'devotional_reminders', 'subscription_updates'];
+    protected $fillable = ['enabled', 'sermon_processing', 'devotional_reminders', 'subscription_updates', 'reading_plan_reminders', 'reminder_time', 'timezone'];
 
     protected function casts(): array
     {
@@ -16,6 +16,7 @@ class NotificationPreference extends Model
             'sermon_processing' => 'boolean',
             'devotional_reminders' => 'boolean',
             'subscription_updates' => 'boolean',
+            'reading_plan_reminders' => 'boolean',
         ];
     }
 

@@ -27,8 +27,9 @@ class ReadingPlanSeeder extends Seeder
                 'reference' => $scripture['reference'],
             ];
         }, $this->readings());
+        $canonDays = $this->canonDays();
 
-        DB::transaction(function () use ($readings): void {
+        DB::transaction(function () use ($readings, $canonDays): void {
             foreach ($this->plans() as $definition) {
                 $plan = ReadingPlan::query()->updateOrCreate(
                     ['slug' => $definition['slug']],
@@ -43,12 +44,17 @@ class ReadingPlanSeeder extends Seeder
                 $plan->days()->where('day_number', '>', $definition['duration_days'])->delete();
 
                 foreach (array_slice($readings, 0, $definition['duration_days']) as $index => $reading) {
+                    $canonAssignments = $definition['slug'] === 'the-bible-in-thirty-days'
+                        ? ($canonDays[$index] ?? [])
+                        : null;
+
                     $plan->days()->updateOrCreate(
                         ['day_number' => $index + 1],
                         [
                             'title' => $reading['title'],
                             'scripture_key' => $reading['key'],
                             'scripture_reference' => $reading['reference'],
+                            'chapter_assignments' => $canonAssignments,
                         ],
                     );
                 }
@@ -75,7 +81,7 @@ class ReadingPlanSeeder extends Seeder
             [
                 'slug' => 'the-bible-in-thirty-days',
                 'title' => 'The Bible in Thirty Days',
-                'description' => 'A thirty-day journey through key passages in the biblical story and the life of discipleship.',
+                'description' => 'A complete-canon reading plan that assigns every chapter of the Protestant Bible across thirty structured days.',
                 'duration_days' => 30,
             ],
         ];
@@ -116,5 +122,32 @@ class ReadingPlanSeeder extends Seeder
             ['key' => 'matthew-5-1-12', 'title' => 'The Blessed Life'],
             ['key' => 'john-20-24-31', 'title' => 'Believe and Have Life'],
         ];
+    }
+
+    /** @return array<int, array<int, array{book_id: string, book: string, chapter: int, reference: string}>> */
+    private function canonDays(): array
+    {
+        $catalog = json_decode((string) file_get_contents(resource_path('data/bible/web.json')), true, flags: JSON_THROW_ON_ERROR);
+        $chapters = [];
+
+        foreach ($catalog['books'] as $book) {
+            foreach (array_keys($book['chapters']) as $chapter) {
+                $chapters[] = [
+                    'book_id' => $book['id'],
+                    'book' => $book['name'],
+                    'chapter' => (int) $chapter,
+                    'reference' => $book['name'].' '.$chapter,
+                ];
+            }
+        }
+
+        $days = array_fill(0, 30, []);
+        $total = count($chapters);
+        foreach ($chapters as $index => $chapter) {
+            $day = min(29, (int) floor($index * 30 / $total));
+            $days[$day][] = $chapter;
+        }
+
+        return $days;
     }
 }

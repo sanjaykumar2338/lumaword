@@ -33,6 +33,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'trial_ends_at' => 'datetime',
+            'manual_premium_until' => 'datetime',
         ];
     }
 

@@ -50,7 +50,9 @@ class YoutubeTranscriptDispatcher
                 'processed_at' => null,
             ]);
 
-            FetchYoutubeTranscript::dispatch($lockedSermon->id)->afterCommit();
+            FetchYoutubeTranscript::dispatch($lockedSermon->id)
+                ->onQueue((string) config('queue.youtube_queue', 'youtube'))
+                ->afterCommit();
 
             return true;
         });

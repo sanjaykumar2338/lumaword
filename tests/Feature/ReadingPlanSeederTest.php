@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ReadingPlan;
 use Database\Seeders\ReadingPlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -42,5 +43,17 @@ class ReadingPlanSeederTest extends TestCase
 
         $this->assertDatabaseCount('reading_plans', 0);
         $this->assertDatabaseCount('reading_plan_days', 0);
+    }
+
+    public function test_bible_in_thirty_days_assigns_each_canon_chapter_once(): void
+    {
+        $this->seed(ReadingPlanSeeder::class);
+        $plan = ReadingPlan::query()->where('slug', 'the-bible-in-thirty-days')->firstOrFail();
+        $assignments = $plan->days()->get()->flatMap(fn ($day) => $day->chapter_assignments)->map(
+            fn (array $chapter): string => $chapter['book_id'].':'.$chapter['chapter'],
+        );
+
+        $this->assertCount(1189, $assignments);
+        $this->assertCount(1189, $assignments->unique());
     }
 }

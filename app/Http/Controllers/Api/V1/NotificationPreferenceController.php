@@ -24,7 +24,7 @@ class NotificationPreferenceController extends Controller
         return response()->json(['data' => $this->data($preference), 'message' => 'Notification preferences updated.']);
     }
 
-    /** @return array<string, bool> */
+    /** @return array<string, mixed> */
     private function data(NotificationPreference $preference): array
     {
         return [
@@ -32,6 +32,9 @@ class NotificationPreferenceController extends Controller
             'sermon_processing' => $preference->sermon_processing ?? true,
             'devotional_reminders' => $preference->devotional_reminders ?? true,
             'subscription_updates' => $preference->subscription_updates ?? true,
+            'reading_plan_reminders' => $preference->reading_plan_reminders ?? true,
+            'reminder_time' => substr((string) ($preference->reminder_time ?? '08:00'), 0, 5),
+            'timezone' => $preference->timezone ?? 'UTC',
         ];
     }
 }

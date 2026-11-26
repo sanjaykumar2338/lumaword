@@ -20,6 +20,9 @@ class UpdateNotificationPreferenceRequest extends FormRequest
             'sermon_processing' => ['required', 'boolean'],
             'devotional_reminders' => ['required', 'boolean'],
             'subscription_updates' => ['required', 'boolean'],
+            'reading_plan_reminders' => ['sometimes', 'boolean'],
+            'reminder_time' => ['sometimes', 'date_format:H:i'],
+            'timezone' => ['sometimes', 'string', 'timezone:all'],
         ];
     }
 }

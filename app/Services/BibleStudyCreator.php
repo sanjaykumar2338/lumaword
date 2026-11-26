@@ -108,10 +108,12 @@ class BibleStudyCreator
     /** @param array<string, mixed> $reference */
     private function readerKey(array $reference): string
     {
+        $book = $this->reader->resolveBookId((string) $reference['translation'], (string) $reference['book']);
+
         return implode(':', [
             'bible',
-            $reference['translation'],
-            $reference['book'],
+            strtoupper((string) $reference['translation']),
+            $book,
             $reference['chapter'],
             $reference['verse_start'] ?? 'all',
             $reference['verse_end'] ?? 'all',

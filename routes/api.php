@@ -111,6 +111,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/devotionals/activity', DevotionalActivityController::class)->name('devotionals.activity.store');
         Route::apiResource('devotionals', DevotionalController::class)->only(['index', 'store', 'show'])
             ->middlewareFor('store', 'throttle:devotional-generation');
+        Route::post('/sermons/{sermon}/devotional', [DevotionalController::class, 'fromSermon'])
+            ->middleware('throttle:devotional-generation')
+            ->name('sermons.devotional.store');
 
         Route::get('/daily-activity', DailyActivityController::class)->name('daily-activity.show');
         Route::get('/devotional-reminder-preferences', [DevotionalReminderPreferenceController::class, 'show'])
