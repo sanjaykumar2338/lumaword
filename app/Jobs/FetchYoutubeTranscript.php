@@ -29,8 +29,6 @@ class FetchYoutubeTranscript implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 600;
 
-    public string $queue = 'youtube';
-
     /**
      * Create a new job instance.
      */

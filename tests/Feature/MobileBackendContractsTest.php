@@ -54,6 +54,31 @@ class MobileBackendContractsTest extends TestCase
         $this->assertDatabaseHas('notification_preferences', ['user_id' => $user->id, 'enabled' => false]);
     }
 
+    public function test_mobile_notification_schedule_fields_are_persisted_with_timezone(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->putJson('/api/v1/mobile/notification-preferences', [
+            'enabled' => true,
+            'sermon_processing' => true,
+            'devotional_reminders' => true,
+            'subscription_updates' => true,
+            'reading_plan_reminders' => false,
+            'reminder_time' => '19:30',
+            'timezone' => 'Asia/Kolkata',
+        ])->assertOk()
+            ->assertJsonPath('data.reading_plan_reminders', false)
+            ->assertJsonPath('data.reminder_time', '19:30')
+            ->assertJsonPath('data.timezone', 'Asia/Kolkata');
+
+        $this->assertDatabaseHas('notification_preferences', [
+            'user_id' => $user->id,
+            'reading_plan_reminders' => false,
+            'reminder_time' => '19:30',
+            'timezone' => 'Asia/Kolkata',
+        ]);
+    }
+
     public function test_purchase_verification_fails_closed_without_credentials(): void
     {
         config(['mobile_purchases.app_store.enabled' => false]);
@@ -85,6 +110,17 @@ class MobileBackendContractsTest extends TestCase
             ->assertJsonPath('data.membership.plan', 'premium')
             ->assertJsonPath('data.membership.status', 'active')
             ->assertJsonPath('data.membership.renews_or_ends_at', $user->mobilePurchases()->sole()->expires_at->toISOString());
+    }
+
+    public function test_manual_premium_access_is_distinguished_from_paid_memberships(): void
+    {
+        $user = User::factory()->create(['manual_premium_until' => now()->addMonth()]);
+
+        $this->actingAs($user)->getJson('/api/v1/entitlements')
+            ->assertOk()
+            ->assertJsonPath('data.membership.plan', 'premium')
+            ->assertJsonPath('data.membership.status', 'manual')
+            ->assertJsonPath('data.membership.source', 'manual');
     }
 
     public function test_account_deletion_requires_exact_confirmation_and_removes_owned_data(): void

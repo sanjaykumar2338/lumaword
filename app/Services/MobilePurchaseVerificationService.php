@@ -23,6 +23,9 @@ class MobilePurchaseVerificationService
         }
 
         $verifier = $store === 'app_store' ? $this->apple : $this->google;
+        if (! config("mobile_purchases.{$store}.enabled")) {
+            throw ValidationException::withMessages(['store' => ucfirst(str_replace('_', ' ', $store)).' purchase verification is not configured yet.']);
+        }
         $storeKey = $store === 'app_store' ? 'app_store_id' : 'play_store_id';
         $providerProductId = data_get(config("mobile_purchases.products.{$productId}"), $storeKey);
         if (! is_string($providerProductId) || $providerProductId === '') {
