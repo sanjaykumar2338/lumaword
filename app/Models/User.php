@@ -107,6 +107,11 @@ class User extends Authenticatable
         return $this->hasMany(AiUsageReservation::class);
     }
 
+    public function sermonCompanions(): HasMany
+    {
+        return $this->hasMany(SermonCompanion::class);
+    }
+
     public function betaFeedback(): HasMany
     {
         return $this->hasMany(BetaFeedback::class);

@@ -30,6 +30,11 @@ use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use App\Http\Controllers\Api\V1\ReadingPlanController;
 use App\Http\Controllers\Api\V1\ReadingPlanProgressController;
 use App\Http\Controllers\Api\V1\ScriptureController;
+use App\Http\Controllers\Api\V1\SermonCompanionAttachmentController;
+use App\Http\Controllers\Api\V1\SermonCompanionController;
+use App\Http\Controllers\Api\V1\SermonCompanionDevotionalController;
+use App\Http\Controllers\Api\V1\SermonCompanionJournalController;
+use App\Http\Controllers\Api\V1\SermonCompanionMemoryController;
 use App\Http\Controllers\Api\V1\SermonController;
 use App\Http\Controllers\Api\V1\SermonConversationController;
 use App\Http\Controllers\Api\V1\SermonMediaController;
@@ -142,6 +147,19 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::apiResource('sermons', SermonController::class)
             ->middlewareFor('store', 'throttle:sermon-submission');
+        Route::apiResource('sermon-companions', SermonCompanionController::class)
+            ->parameters(['sermon-companions' => 'sermon_companion']);
+        Route::post('/sermon-companions/{sermon_companion}/attachments', SermonCompanionAttachmentController::class)
+            ->middleware('throttle:sermon-submission');
+        Route::post('/sermon-companions/{sermon_companion}/devotional-plans', [SermonCompanionDevotionalController::class, 'store'])
+            ->middleware('throttle:devotional-generation');
+        Route::get('/sermon-companion-plans/{plan}/days', [SermonCompanionDevotionalController::class, 'days']);
+        Route::post('/sermon-companion-days/{day}/complete', [SermonCompanionDevotionalController::class, 'complete']);
+        Route::get('/sermon-companions/{sermon_companion}/journal', [SermonCompanionJournalController::class, 'index']);
+        Route::post('/sermon-companions/{sermon_companion}/journal', [SermonCompanionJournalController::class, 'store']);
+        Route::delete('/sermon-companion-journal/{entry}', [SermonCompanionJournalController::class, 'destroy']);
+        Route::get('/sermon-companions/{sermon_companion}/memory-cards', [SermonCompanionMemoryController::class, 'index']);
+        Route::post('/sermon-companion-memory-cards/{memory_card}/practice', [SermonCompanionMemoryController::class, 'practice']);
         Route::post('/sermons/{sermon}/transcript', SermonTranscriptController::class)
             ->middleware('throttle:sermon-submission')
             ->name('sermons.transcript.store');
