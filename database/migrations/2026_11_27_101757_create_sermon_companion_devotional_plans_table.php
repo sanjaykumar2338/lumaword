@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('generated_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
-            $table->unique(['sermon_companion_id', 'days_count']);
+            $table->unique(['sermon_companion_id', 'days_count'], 'sc_plans_companion_days_unique');
         });
     }
 

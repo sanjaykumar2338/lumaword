@@ -21,7 +21,7 @@ return new class extends Migration
             $table->longText('content');
             $table->timestamps();
             $table->unique(['user_id', 'sermon_companion_id', 'devotional_day_id', 'entry_type', 'client_key'], 'companion_journal_idempotency');
-            $table->index(['user_id', 'sermon_companion_id', 'entry_type']);
+            $table->index(['user_id', 'sermon_companion_id', 'entry_type'], 'sc_journal_user_companion_type_idx');
         });
     }
 

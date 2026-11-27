@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('sermon_companion_memory_practices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sermon_companion_memory_card_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sermon_companion_memory_card_id')->constrained(indexName: 'sc_practices_card_fk')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->boolean('completed')->default(false);
             $table->unsignedInteger('attempts')->default(0);
             $table->timestamp('last_practiced_at')->nullable();
             $table->timestamps();
-            $table->unique(['sermon_companion_memory_card_id', 'user_id']);
+            $table->unique(['sermon_companion_memory_card_id', 'user_id'], 'sc_practices_card_user_unique');
         });
     }
 

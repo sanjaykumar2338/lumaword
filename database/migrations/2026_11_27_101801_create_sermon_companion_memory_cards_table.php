@@ -20,7 +20,7 @@ return new class extends Migration
             $table->json('fill_in_blank')->nullable();
             $table->json('correct_answers')->nullable();
             $table->timestamps();
-            $table->unique(['sermon_companion_id', 'reference', 'translation']);
+            $table->unique(['sermon_companion_id', 'reference', 'translation'], 'sc_cards_companion_ref_translation_unique');
         });
     }
 

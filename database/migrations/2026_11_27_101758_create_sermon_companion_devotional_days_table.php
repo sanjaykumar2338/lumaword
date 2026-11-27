@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('sermon_companion_devotional_days', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sermon_companion_devotional_plan_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sermon_companion_devotional_plan_id')->constrained(indexName: 'sc_days_plan_fk')->cascadeOnDelete();
             $table->unsignedTinyInteger('day_number');
             $table->string('title', 180);
             $table->string('theme', 255);
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->text('prayer');
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
-            $table->unique(['sermon_companion_devotional_plan_id', 'day_number']);
+            $table->unique(['sermon_companion_devotional_plan_id', 'day_number'], 'sc_days_plan_day_unique');
         });
     }
 

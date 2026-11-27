@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('sermon_companion_reminder_deliveries', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('sermon_companion_devotional_plan_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sermon_companion_devotional_plan_id')->constrained(indexName: 'sc_reminders_plan_fk')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('kind', 24);
             $table->date('reminder_date');

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('sermon_companion_progress', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sermon_companion_devotional_plan_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('sermon_companion_devotional_plan_id')->constrained(indexName: 'sc_progress_plan_fk')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->unsignedTinyInteger('current_day')->default(1);
             $table->json('completed_days')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->text('midweek_check_in')->nullable();
             $table->timestamps();
-            $table->unique('sermon_companion_devotional_plan_id');
+            $table->unique('sermon_companion_devotional_plan_id', 'sc_progress_plan_unique');
         });
     }
 
