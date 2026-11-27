@@ -3,6 +3,8 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\SermonCompanion;
+use App\Models\SermonCompanionDevotionalDay;
+use App\Models\SermonCompanionProgress;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -47,5 +49,20 @@ class SermonCompanionControllerTest extends TestCase
         $attachment = $companion->attachments()->sole();
         $this->assertDatabaseHas('sermon_companion_attachments', ['sermon_companion_id' => $companion->id, 'kind' => 'image', 'status' => 'queued']);
         Storage::disk('local')->assertExists($attachment->path);
+    }
+
+    public function test_devotional_completion_updates_resume_progress_and_midweek_check_in(): void
+    {
+        $user = User::factory()->create();
+        $companion = $user->sermonCompanions()->create(['title' => 'Progress', 'status' => 'completed']);
+        $plan = $companion->devotionalPlans()->create(['user_id' => $user->id, 'days_count' => 5, 'status' => 'completed']);
+        $days = collect(range(1, 5))->map(fn (int $day): SermonCompanionDevotionalDay => $plan->days()->create(['day_number' => $day, 'title' => "Day {$day}", 'theme' => 'Theme', 'scripture_reference' => 'John 3:16', 'translation' => 'WEB', 'scripture_text' => 'For God so loved the world.', 'reflection' => 'Reflection', 'reflection_question' => 'Question?', 'practical_application' => 'Application', 'prayer' => 'Prayer']));
+        SermonCompanionProgress::query()->create(['sermon_companion_devotional_plan_id' => $plan->id, 'user_id' => $user->id, 'current_day' => 1, 'completed_days' => [], 'last_activity_at' => now()]);
+        $this->actingAs($user)->postJson("/api/v1/sermon-companion-days/{$days[0]->id}/complete")->assertOk();
+        $this->actingAs($user)->postJson("/api/v1/sermon-companions/{$companion->id}/journal", ['entry_type' => 'midweek_check_in', 'content' => 'I am encouraged.'])->assertCreated();
+        $progress = $plan->progress()->firstOrFail();
+        $this->assertSame([1], $progress->completed_days);
+        $this->assertSame(20, $progress->completion_percentage);
+        $this->assertNotNull($progress->midweek_check_in);
     }
 }

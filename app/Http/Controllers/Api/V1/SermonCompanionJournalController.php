@@ -24,6 +24,11 @@ class SermonCompanionJournalController extends Controller
     {
         $data = $request->validated();
         $entry = $sermonCompanion->journalEntries()->updateOrCreate(['user_id' => $request->user()->id, 'devotional_day_id' => $data['devotional_day_id'] ?? null, 'entry_type' => $data['entry_type'], 'client_key' => $data['client_key'] ?? null], ['content' => $data['content']]);
+        if ($data['entry_type'] === 'midweek_check_in') {
+            $sermonCompanion->devotionalPlans()->with('progress')->get()->each(function ($plan): void {
+                $plan->progress?->update(['midweek_check_in' => now(), 'last_activity_at' => now()]);
+            });
+        }
 
         return new SermonCompanionJournalEntryResource($entry);
     }

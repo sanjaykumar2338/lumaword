@@ -33,6 +33,8 @@ class NotificationPreferenceController extends Controller
             'devotional_reminders' => $preference->devotional_reminders ?? true,
             'subscription_updates' => $preference->subscription_updates ?? true,
             'reading_plan_reminders' => $preference->reading_plan_reminders ?? true,
+            'sermon_companion_reminders' => $preference->sermon_companion_reminders ?? true,
+            'sermon_companion_midweek_check_ins' => $preference->sermon_companion_midweek_check_ins ?? true,
             'reminder_time' => substr((string) ($preference->reminder_time ?? '08:00'), 0, 5),
             'timezone' => $preference->timezone ?? 'UTC',
         ];

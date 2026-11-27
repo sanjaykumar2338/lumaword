@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreSermonCompanionRequest;
 use App\Http\Requests\Api\V1\UpdateSermonCompanionRequest;
 use App\Http\Resources\V1\SermonCompanionResource;
+use App\Jobs\GenerateSermonCompanionRecap;
 use App\Models\SermonCompanion;
+use App\Services\AiUsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -49,6 +51,20 @@ class SermonCompanionController extends Controller
         $sermonCompanion->update($request->validated() + (filled($request->validated('confirmed_notes')) ? ['reviewed_at' => now(), 'status' => 'ready'] : []));
 
         return new SermonCompanionResource($sermonCompanion->refresh()->load('attachments'));
+    }
+
+    public function recap(Request $request, SermonCompanion $sermonCompanion, AiUsageService $usage): JsonResponse
+    {
+        abort_unless($sermonCompanion->user_id === $request->user()->id, 403);
+        if ($sermonCompanion->status === 'generating_recap') {
+            return (new SermonCompanionResource($sermonCompanion))->response()->setStatusCode(202);
+        }
+        $idempotencyKey = $request->header('Idempotency-Key') ?: 'companion:'.$sermonCompanion->id.':'.config('sermon_companion.ai.prompt_version');
+        $reservation = $usage->reserve($request->user(), 'sermon_companion', $idempotencyKey);
+        $sermonCompanion->update(['status' => 'generating_recap', 'processing_error' => null]);
+        GenerateSermonCompanionRecap::dispatch($sermonCompanion->id, $reservation->id);
+
+        return (new SermonCompanionResource($sermonCompanion->refresh()))->additional(['message' => 'Sunday in One Page recap queued for generation.'])->response()->setStatusCode(202);
     }
 
     /**

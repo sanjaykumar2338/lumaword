@@ -149,6 +149,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middlewareFor('store', 'throttle:sermon-submission');
         Route::apiResource('sermon-companions', SermonCompanionController::class)
             ->parameters(['sermon-companions' => 'sermon_companion']);
+        Route::post('/sermon-companions/{sermon_companion}/recap', [SermonCompanionController::class, 'recap'])
+            ->middleware('throttle:devotional-generation');
         Route::post('/sermon-companions/{sermon_companion}/attachments', SermonCompanionAttachmentController::class)
             ->middleware('throttle:sermon-submission');
         Route::post('/sermon-companions/{sermon_companion}/devotional-plans', [SermonCompanionDevotionalController::class, 'store'])

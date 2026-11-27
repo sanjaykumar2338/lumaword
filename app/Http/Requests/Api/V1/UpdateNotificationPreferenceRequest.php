@@ -21,6 +21,8 @@ class UpdateNotificationPreferenceRequest extends FormRequest
             'devotional_reminders' => ['required', 'boolean'],
             'subscription_updates' => ['required', 'boolean'],
             'reading_plan_reminders' => ['sometimes', 'boolean'],
+            'sermon_companion_reminders' => ['sometimes', 'boolean'],
+            'sermon_companion_midweek_check_ins' => ['sometimes', 'boolean'],
             'reminder_time' => ['sometimes', 'date_format:H:i'],
             'timezone' => ['sometimes', 'string', 'timezone:all'],
         ];

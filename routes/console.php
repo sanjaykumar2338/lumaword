@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('devotional-reminders:dispatch')
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command('app:dispatch-sermon-companion-reminders')
+    ->everyMinute()
+    ->withoutOverlapping();

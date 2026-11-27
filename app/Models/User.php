@@ -102,6 +102,11 @@ class User extends Authenticatable
         return $this->hasMany(DevotionalReminderDelivery::class);
     }
 
+    public function sermonCompanionReminderDeliveries(): HasMany
+    {
+        return $this->hasMany(SermonCompanionReminderDelivery::class);
+    }
+
     public function aiUsageReservations(): HasMany
     {
         return $this->hasMany(AiUsageReservation::class);

@@ -30,4 +30,9 @@ class SermonCompanionDevotionalPlan extends Model
     {
         return $this->hasOne(SermonCompanionProgress::class, 'sermon_companion_devotional_plan_id');
     }
+
+    public function reminderDeliveries(): HasMany
+    {
+        return $this->hasMany(SermonCompanionReminderDelivery::class);
+    }
 }
